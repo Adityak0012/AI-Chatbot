@@ -21,13 +21,31 @@ export const ChatArea = () => {
     }
   }, [location.state, currentSessionId, loadSession, handleNewChat, navigate, location.pathname]);
 
+  const containerRef = useRef(null);
+  const userScrolledUp = useRef(false);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      userScrolledUp.current = !isNearBottom;
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!userScrolledUp.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'instant', block: 'end' });
+    }
   }, [messages, isSending]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 w-full relative">
-      <div id="chat-messages-area" className="flex-1 overflow-y-auto custom-scrollbar">
+      <div id="chat-messages-area" ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
             <div className="w-16 h-16 bg-[var(--surface-2)] rounded-2xl flex items-center justify-center mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">

@@ -185,7 +185,7 @@ export const ChatProvider = ({ children }) => {
     if ((!content.trim() && attachments.length === 0) || isSending) return;
 
     setError('');
-    
+
     let displayContent = content.trim();
     if (attachments && attachments.length > 0) {
       const imageLinks = [];
@@ -198,7 +198,6 @@ export const ChatProvider = ({ children }) => {
           fileLinks.push(`[📄 ${file.name}](#)`);
         }
       });
-      
       const allLinks = [...imageLinks, ...fileLinks].join('\n\n');
       if (allLinks) {
         displayContent = displayContent ? `${allLinks}\n\n${displayContent}` : allLinks;
@@ -213,51 +212,95 @@ export const ChatProvider = ({ children }) => {
       const formData = new FormData();
       formData.append('prompt', content.trim());
       formData.append('effort', effort);
-      if (model) {
-        formData.append('model', model);
-      }
-      if (currentSessionId) {
-        formData.append('session_id', currentSessionId);
-      }
-      if (projectId) {
-        formData.append('project_id', projectId);
-      }
-      if (skill) {
-        formData.append('skill', skill);
-      }
+      formData.append('stream', 'true');
+      if (model) formData.append('model', model);
+      if (currentSessionId) formData.append('session_id', currentSessionId);
+      if (projectId) formData.append('project_id', projectId);
+      if (skill) formData.append('skill', skill);
       formData.append('web_search', webSearch);
-      
       if (attachments && attachments.length > 0) {
-        attachments.forEach(file => {
-          formData.append('files', file);
+        attachments.forEach(file => formData.append('files', file));
+      }
+
+      const token = localStorage.getItem('access_token');
+      const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+      const response = await fetch(`${baseURL}/chat`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) { handleLogout(); return; }
+        const errData = await response.json().catch(() => ({}));
+        setError(errData.detail || 'Failed to get a response.');
+        setMessages(prev => prev.slice(0, -1));
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedContent = '';
+      let newSessionId = currentSessionId;
+      let buffer = '';
+      let animFrameId = null;
+      let pendingContent = '';
+
+      setMessages(prev => [...prev, { role: 'ai', content: '' }]);
+
+      const flushUpdate = () => {
+        const snap = pendingContent;
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'ai', content: snap };
+          return updated;
         });
+        animFrameId = null;
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.done) {
+                newSessionId = data.session_id;
+              } else if (data.content) {
+                streamedContent += data.content;
+                pendingContent = streamedContent;
+              }
+            } catch {}
+          }
+        }
+
+        if (!animFrameId) {
+          animFrameId = requestAnimationFrame(flushUpdate);
+        }
       }
-      
-      const response = await api.post('/chat', formData);
-      
-      const newSessionId = response.data.session_id;
-      
-      let finalContent = response.data.response;
-      if (Array.isArray(finalContent)) {
-        finalContent = finalContent.join('\n');
-      } else if (typeof finalContent === 'object' && finalContent !== null) {
-        finalContent = finalContent.content || finalContent.message || String(finalContent);
-      }
-      finalContent = String(finalContent || '');
-      
-      setMessages(prev => [...prev, { role: 'ai', content: finalContent }]);
+
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'ai', content: streamedContent };
+        return updated;
+      });
 
       if (soundEnabled) playNotificationSound();
-      if (desktopNotifEnabled) showDesktopNotification('New response', finalContent.slice(0, 100));
+      if (desktopNotifEnabled) showDesktopNotification('New response', streamedContent.slice(0, 100));
       if (responseAlertsEnabled) flashTabTitle('💬 New reply');
-      
+
       if (!currentSessionId && newSessionId) {
         setCurrentSessionId(newSessionId);
-        // Refresh session list to show new chat
         const historyRes = await api.get('/chat/history');
         setSessions(historyRes.data);
       } else {
-        // Update the timestamp of current session to bring it to top
         setSessions(prev => {
           const updated = [...prev];
           const idx = updated.findIndex(s => s.id === (currentSessionId || newSessionId));
@@ -271,12 +314,12 @@ export const ChatProvider = ({ children }) => {
       }
     } catch (err) {
       console.error(err);
-      if (err.response?.status === 401) {
+      if (err?.message?.includes('401') || err?.status === 401) {
         handleLogout();
-      } else {
-        const backendError = err.response?.data?.detail || 'Failed to get a response. Please try again.';
-        setError(backendError);
+        return;
       }
+      setError('Failed to get a response. Please try again.');
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsSending(false);
     }

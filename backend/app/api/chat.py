@@ -23,7 +23,9 @@ from app.schemas.chat import (
     ChatSessionUpdateRequest,
     ChatMessageResponse
 )
-from app.services.ai_service import generate_ai_response
+from app.services.ai_service import generate_ai_response, generate_ai_stream
+from fastapi.responses import StreamingResponse as FastAPIStreamingResponse
+import json
 from app.utils.file_utils import get_file_category, is_allowed_file, extract_text_content
 
 router = APIRouter(
@@ -33,7 +35,7 @@ router = APIRouter(
 
 from typing import List, Optional
 
-@router.post("", response_model=ChatResponse)
+@router.post("")
 def chat_with_ai(
     prompt: str = Form(...),
     effort: str = Form("medium"),
@@ -42,6 +44,7 @@ def chat_with_ai(
     project_id: Optional[str] = Form(None),
     skill: Optional[str] = Form(None),
     web_search: bool = Form(False),
+    stream: bool = Form(False),
     files: Optional[List[UploadFile]] = File(default=[]),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -176,8 +179,50 @@ def chat_with_ai(
 
     print(f"DEBUG: Final ai_prompt length sent to Ollama: {len(ai_prompt)} characters", flush=True)
 
+    # Build conversation history
+    previous_messages = db.query(ChatMessage).filter(
+        ChatMessage.session_id == session_id
+    ).order_by(ChatMessage.created_at).all()
+    
+    conversation_history = [
+        {"role": msg.role, "content": msg.content}
+        for msg in previous_messages
+    ]
+
+    if stream:
+        def stream_generator():
+            full_response = ""
+            try:
+                for chunk in generate_ai_stream(ai_prompt, images=uploaded_image_urls, model=model, history=conversation_history):
+                    chunk = re.sub(r"<think>.*?</think>", "", chunk, flags=re.DOTALL)
+                    if chunk:
+                        full_response += chunk
+                        yield f"data: {json.dumps({'content': chunk, 'session_id': session_id})}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            finally:
+                try:
+                    if full_response:
+                        ai_message = ChatMessage(session_id=session_id, role="ai", content=full_response)
+                        db.add(ai_message)
+                        chat_session.updated_at = func.now()
+                        db.commit()
+                except Exception:
+                    db.rollback()
+                yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
+
+        return FastAPIStreamingResponse(
+            stream_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+                "Connection": "keep-alive",
+            }
+        )
+
     try:
-        ai_response_text = str(generate_ai_response(ai_prompt, images=uploaded_image_urls, model=model))
+        ai_response_text = str(generate_ai_response(ai_prompt, images=uploaded_image_urls, model=model, history=conversation_history))
 
         # Strip internal <think>...</think> reasoning blocks that some models
         # (e.g. Qwen reasoning models) include in their raw output — these

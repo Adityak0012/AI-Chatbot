@@ -35,7 +35,7 @@ class GroqProvider(BaseAIProvider):
                 return f"data:{mime_type};base64,{b64_data}"
         return ""
 
-    def generate_response(self, prompt: str, images: list = None, model: str = None) -> str:
+    def generate_response(self, prompt: str, images: list = None, model: str = None, history: list = None) -> str:
         api_key = os.environ.get("GROQ_API_KEY")
         if not api_key and hasattr(settings, "GROQ_API_KEY"):
             api_key = getattr(settings, "GROQ_API_KEY")
@@ -52,9 +52,14 @@ class GroqProvider(BaseAIProvider):
         selected_model = model or "openai/gpt-oss-120b"
 
         messages = []
+        if history:
+            for msg in history[:-1]:
+                messages.append({
+                    "role": "user" if msg["role"] == "user" else "assistant",
+                    "content": msg["content"]
+                })
+
         if images and len(images) > 0:
-            # Vision requires a vision-capable model regardless of the
-            # user's text-model choice, since only one is currently available.
             selected_model = "qwen/qwen3.6-27b"
 
             content = [{"type": "text", "text": prompt}]
@@ -103,3 +108,55 @@ class GroqProvider(BaseAIProvider):
             raise HTTPException(status_code=503, detail="Connection refused: Groq API is unavailable.")
         except requests.exceptions.RequestException as e:
             raise HTTPException(status_code=502, detail=f"Error communicating with Groq: {str(e)}")
+
+    def generate_stream(self, prompt: str, images: list = None, model: str = None, history: list = None):
+        api_key = os.environ.get("GROQ_API_KEY") or getattr(settings, "GROQ_API_KEY", None)
+        if not api_key:
+            raise HTTPException(status_code=500, detail="GROQ_API_KEY is not set.")
+
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        selected_model = model or "openai/gpt-oss-120b"
+
+        messages = []
+        if history:
+            for msg in history[:-1]:
+                messages.append({
+                    "role": "user" if msg["role"] == "user" else "assistant",
+                    "content": msg["content"]
+                })
+        messages.append({"role": "user", "content": prompt})
+
+        payload = {
+            "model": selected_model,
+            "messages": messages,
+            "stream": True
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=180.0, stream=True)
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode("utf-8")
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            break
+                        import json
+                        try:
+                            chunk = json.loads(data)
+                            delta = chunk.get("choices", [{}])[0].get("delta", {})
+                            content = delta.get("content", "")
+                            if content:
+                                yield content
+                        except json.JSONDecodeError:
+                            continue
+        except requests.exceptions.Timeout:
+            raise HTTPException(status_code=504, detail="Request to Groq API timed out.")
+        except requests.exceptions.ConnectionError:
+            raise HTTPException(status_code=503, detail="Groq API is unavailable.")
