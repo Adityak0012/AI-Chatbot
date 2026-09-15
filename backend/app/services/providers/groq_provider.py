@@ -83,6 +83,16 @@ class GroqProvider(BaseAIProvider):
 
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=180.0)
+
+            if response.status_code == 429:
+                raise HTTPException(status_code=429, detail="Rate limit exceeded. Please wait a moment and try again.")
+
+            if response.status_code == 401:
+                raise HTTPException(status_code=500, detail="Invalid Groq API key. Please check your configuration.")
+
+            if response.status_code == 503:
+                raise HTTPException(status_code=503, detail="Groq API is temporarily unavailable. Please try again later.")
+
             if response.status_code >= 400:
                 try:
                     error_body = response.json()
@@ -93,21 +103,29 @@ class GroqProvider(BaseAIProvider):
                     status_code=502,
                     detail=f"Groq API error ({response.status_code}): {error_detail}"
                 )
-            data = response.json()
 
+            data = response.json()
             choices = data.get("choices", [])
+
             if not choices:
-                raise HTTPException(status_code=502, detail="Invalid response from Groq server.")
+                raise HTTPException(status_code=502, detail="AI returned an empty response. Please try again.")
 
             message = choices[0].get("message", {})
-            return str(message.get("content", "")).strip()
+            content = str(message.get("content", "")).strip()
 
+            if not content:
+                raise HTTPException(status_code=502, detail="AI returned an empty response. Please try again.")
+
+            return content
+
+        except HTTPException:
+            raise
         except requests.exceptions.Timeout:
-            raise HTTPException(status_code=504, detail="Request to Groq API timed out.")
+            raise HTTPException(status_code=504, detail="Request timed out. The AI is taking too long to respond. Please try again.")
         except requests.exceptions.ConnectionError:
-            raise HTTPException(status_code=503, detail="Connection refused: Groq API is unavailable.")
+            raise HTTPException(status_code=503, detail="Cannot connect to Groq API. Please check your internet connection.")
         except requests.exceptions.RequestException as e:
-            raise HTTPException(status_code=502, detail=f"Error communicating with Groq: {str(e)}")
+            raise HTTPException(status_code=502, detail=f"Network error while communicating with Groq: {str(e)}")
 
     def generate_stream(self, prompt: str, images: list = None, model: str = None, history: list = None):
         api_key = os.environ.get("GROQ_API_KEY") or getattr(settings, "GROQ_API_KEY", None)
@@ -156,7 +174,11 @@ class GroqProvider(BaseAIProvider):
                                 yield content
                         except json.JSONDecodeError:
                             continue
+        except HTTPException:
+            raise
         except requests.exceptions.Timeout:
-            raise HTTPException(status_code=504, detail="Request to Groq API timed out.")
+            raise HTTPException(status_code=504, detail="Request timed out. Please try again.")
         except requests.exceptions.ConnectionError:
-            raise HTTPException(status_code=503, detail="Groq API is unavailable.")
+            raise HTTPException(status_code=503, detail="Cannot connect to Groq API. Please check your internet connection.")
+        except requests.exceptions.RequestException as e:
+            raise HTTPException(status_code=502, detail=f"Network error: {str(e)}")

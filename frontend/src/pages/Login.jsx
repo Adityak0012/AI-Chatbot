@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Bot, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -105,7 +106,12 @@ const Login = () => {
 
         {/* Form Section */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {errors.general && (
+          {location.state?.reason === 'session_expired' && (
+            <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-sm text-center">
+              Your session has expired. Please log in again.
+            </div>
+          )}
+        {errors.general && (
             <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
               {errors.general}
             </div>

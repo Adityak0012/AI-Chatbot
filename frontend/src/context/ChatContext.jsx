@@ -21,6 +21,12 @@ export const ChatProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState('');
+
+  const setErrorWithType = (message, type = 'general') => {
+    setError(message);
+    setErrorType(type);
+  };
 
   const [savedMessages, setSavedMessages] = useState([]);
 
@@ -50,14 +56,14 @@ export const ChatProvider = ({ children }) => {
     await fetchSavedMessages();
   }, [fetchSavedMessages]);
 
-  const handleLogout = useCallback(() => {
+  const handleLogout = useCallback((reason = '') => {
     localStorage.removeItem('access_token');
     setUserProfile(null);
     setSessions([]);
     setProjects([]);
     setMessages([]);
     setCurrentSessionId(null);
-    navigate('/login');
+    navigate('/login', { state: { reason } });
   }, [navigate]);
 
   const fetchInitialData = useCallback(async () => {
@@ -231,9 +237,18 @@ export const ChatProvider = ({ children }) => {
       });
 
       if (!response.ok) {
-        if (response.status === 401) { handleLogout(); return; }
+        if (response.status === 401) { handleLogout('session_expired'); return; }
         const errData = await response.json().catch(() => ({}));
-        setError(errData.detail || 'Failed to get a response.');
+        const errMsg = errData.detail || 'Failed to get a response.';
+        if (response.status === 429) {
+          setErrorWithType(errMsg, 'rate_limit');
+        } else if (response.status === 504) {
+          setErrorWithType(errMsg, 'timeout');
+        } else if (response.status === 503) {
+          setErrorWithType(errMsg, 'unavailable');
+        } else {
+          setErrorWithType(errMsg, 'general');
+        }
         setMessages(prev => prev.slice(0, -1));
         return;
       }
@@ -272,6 +287,8 @@ export const ChatProvider = ({ children }) => {
               const data = JSON.parse(line.slice(6));
               if (data.done) {
                 newSessionId = data.session_id;
+              } else if (data.error) {
+                setErrorWithType(data.error, 'stream');
               } else if (data.content) {
                 streamedContent += data.content;
                 pendingContent = streamedContent;
@@ -318,7 +335,11 @@ export const ChatProvider = ({ children }) => {
         handleLogout();
         return;
       }
-      setError('Failed to get a response. Please try again.');
+      if (err?.message?.includes('fetch') || err?.message?.includes('network')) {
+        setErrorWithType('Network error. Please check your internet connection.', 'network');
+      } else {
+        setErrorWithType('Failed to get a response. Please try again.', 'general');
+      }
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsSending(false);
@@ -418,6 +439,7 @@ export const ChatProvider = ({ children }) => {
     sessions,
     projects,
     fetchProjects,
+    errorType,
     assignSessionToProject,
     libraryFiles,
     currentSessionId,

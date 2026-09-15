@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
-import { Bot } from 'lucide-react';
+import { Bot, WifiOff, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 
 export const ChatArea = () => {
-  const { messages, isSending, sendMessage, loadSession, handleNewChat, currentSessionId } = useChat();
+  const { messages, isSending, sendMessage, loadSession, handleNewChat, currentSessionId, error, errorType } = useChat();
   const messagesEndRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,6 +71,21 @@ export const ChatArea = () => {
 
       <div className="shrink-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)] to-transparent pt-10 pb-0 absolute bottom-0 left-0 right-0 w-full z-10 pointer-events-none">
         <div className="pointer-events-auto">
+          {error && (
+            <div className={`mx-auto max-w-3xl px-4 mb-2`}>
+              <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
+                ${errorType === 'network' ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' :
+                  errorType === 'timeout' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
+                  errorType === 'rate_limit' ? 'bg-purple-500/10 border border-purple-500/20 text-purple-400' :
+                  'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                {errorType === 'network' ? <WifiOff size={16} /> :
+                 errorType === 'timeout' ? <Clock size={16} /> :
+                 errorType === 'rate_limit' ? <RefreshCw size={16} /> :
+                 <AlertTriangle size={16} />}
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
           <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
         </div>
       </div>

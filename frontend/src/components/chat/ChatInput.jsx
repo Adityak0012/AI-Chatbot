@@ -120,24 +120,48 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
     setIsDragging(false);
   };
 
+  const [fileError, setFileError] = useState('');
+
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const validateAndAddFiles = (newFiles) => {
+    setFileError('');
+    const valid = [];
+    for (const file of newFiles) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        setFileError(`File type not supported: ${file.name}`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        setFileError(`File too large (max 10MB): ${file.name}`);
+        continue;
+      }
+      valid.push(file);
+    }
+    if (valid.length > 0) {
+      setFiles(prev => [...prev, ...valid]);
+    }
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+      validateAndAddFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const handlePaste = (e) => {
     if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
-      setFiles(prev => [...prev, ...Array.from(e.clipboardData.files)]);
+      validateAndAddFiles(Array.from(e.clipboardData.files));
     }
   };
 
   return (
     <div
-      className="relative w-full max-w-4xl mx-auto px-4 pt-4 pb-6"
+      className="relative w-full max-w-4xl mx-auto px-4 pt-4 pb-6 flex flex-col"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -147,6 +171,13 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
         "relative flex flex-col bg-[var(--surface)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border transition-all focus-within:ring-2 focus-within:ring-[var(--primary)]/50 focus-within:shadow-[0_8px_40px_rgb(0,0,0,0.16)]",
         isDragging ? "border-[var(--primary)] border-dashed border-2 bg-[var(--primary)]/5" : "border-[var(--border)]"
       )}>
+        {fileError && (
+          <div className="px-4 pt-2 pb-0">
+            <div className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              {fileError}
+            </div>
+          </div>
+        )}
         {isDragging && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--surface)]/90 rounded-2xl pointer-events-none">
             <p className="text-sm font-medium text-[var(--primary)]">Drop files to attach</p>
@@ -180,7 +211,7 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
         )}
 
         <div className="flex items-end gap-2 p-2 pl-4">
-          <AttachmentMenu onFilesSelected={(newFiles) => setFiles(prev => [...prev, ...newFiles])} activeSkill={activeSkill} onSkillChange={setActiveSkill} isWebSearchOn={webSearchOn} onWebSearchToggle={() => setWebSearchOn(prev => !prev)} currentSessionId={currentSessionId} />
+          <AttachmentMenu onFilesSelected={(newFiles) => validateAndAddFiles(newFiles)} activeSkill={activeSkill} onSkillChange={setActiveSkill} isWebSearchOn={webSearchOn} onWebSearchToggle={() => setWebSearchOn(prev => !prev)} currentSessionId={currentSessionId} />
 
           <textarea
             ref={textAreaRef}
