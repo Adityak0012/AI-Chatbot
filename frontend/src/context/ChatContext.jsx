@@ -23,10 +23,10 @@ export const ChatProvider = ({ children }) => {
   const [error, setError] = useState('');
   const [errorType, setErrorType] = useState('');
 
-  const setErrorWithType = (message, type = 'general') => {
+  const setErrorWithType = useCallback((message, type = 'general') => {
     setError(message);
     setErrorType(type);
-  };
+  }, []);
 
   const [savedMessages, setSavedMessages] = useState([]);
 
