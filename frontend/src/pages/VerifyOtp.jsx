@@ -5,39 +5,28 @@ import { motion } from 'framer-motion';
 import api from '../services/api';
 
 const VerifyOtp = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [code, setCode] = useState('');
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const [code, setCode]           = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState('');
+  const [errors, setErrors]       = useState({});
+  const [success, setSuccess]     = useState('');
 
   const target = location.state?.email || '';
 
   useEffect(() => {
-    if (!target) {
-      navigate('/login');
-    }
+    if (!target) navigate('/login');
   }, [target, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!code || code.length !== 6) {
-      setErrors({ code: 'Please enter a valid 6-digit code' });
-      return;
-    }
-    
+    if (!code || code.length !== 6) { setErrors({ code: 'Please enter a valid 6-digit code' }); return; }
     setIsLoading(true);
     setErrors({});
-    
     try {
-      await api.post('/auth/verify-otp', {
-        target: target,
-        purpose: 'signup',
-        code: code
-      });
-      setSuccess('Account verified successfully! Redirecting...');
+      await api.post('/auth/verify-otp', { target, purpose: 'signup', code });
+      setSuccess('Account verified! Redirecting…');
       setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
       setErrors({ general: error.response?.data?.detail || 'Invalid or expired verification code' });
@@ -51,96 +40,86 @@ const VerifyOtp = () => {
     setErrors({});
     setSuccess('');
     try {
-      await api.post('/auth/resend-otp', {
-        target: target,
-        channel: 'email',
-        purpose: 'signup'
-      });
+      await api.post('/auth/resend-otp', { target, channel: 'email', purpose: 'signup' });
       setSuccess('A new code has been sent.');
-    } catch (error) {
+    } catch {
       setErrors({ general: 'Failed to resend code' });
     } finally {
       setIsResending(false);
     }
   };
 
+  const inputBase = 'w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200 bg-[var(--surface-2)] text-[var(--text)] placeholder-[var(--placeholder)] border focus:ring-2 focus:ring-[var(--ring)]';
+  const inputOk   = 'border-[var(--border)] focus:border-[var(--primary)]';
+  const inputErr  = 'border-red-500/60 focus:border-red-500 focus:ring-red-500/30';
+
+  const isRedirecting = success.includes('Redirect');
+
   return (
-    <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-black via-[#0A0A0F] to-[#1a0b2e] px-4 py-12 sm:px-6 lg:px-8">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+    <div className="min-h-screen w-screen flex items-center justify-center bg-[var(--bg)] px-4 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="max-w-[450px] w-full space-y-8 bg-white/10 dark:bg-[#18181F]/70 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20 dark:border-[#2A2A35]"
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="max-w-[440px] w-full bg-[var(--surface)] border border-[var(--border)] rounded-3xl shadow-[0_24px_64px_var(--shadow)] p-8"
       >
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-violet-600 dark:bg-violet-500 rounded-xl flex items-center justify-center shadow-md">
-            <Bot className="h-8 w-8 text-white" />
+        <div className="text-center mb-7">
+          <div className="mx-auto h-12 w-12 rounded-xl flex items-center justify-center shadow-lg mb-5" style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)' }}>
+            <Bot className="h-7 w-7 text-white" aria-hidden="true" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            Verify your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
-            We sent a code to {target}
+          <h1 className="text-2xl font-bold text-[var(--text)] tracking-tight">Verify your account</h1>
+          <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+            We sent a 6-digit code to <span className="font-medium text-[var(--text)]">{target}</span>
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
           {errors.general && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center" role="alert">
               {errors.general}
             </div>
           )}
           {success && (
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm text-center flex items-center justify-center gap-2">
-              <CheckCircle className="w-4 h-4" /> {success}
+            <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm text-center flex items-center justify-center gap-2" role="status">
+              <CheckCircle className="w-4 h-4" aria-hidden="true" /> {success}
             </div>
           )}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
-                Enter 6-digit code
-              </label>
-              <div className="mt-2 flex justify-center">
-                <input
-                  type="text"
-                  maxLength={6}
-                  className={`appearance-none block w-48 text-center px-4 py-3 text-2xl tracking-widest border rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 bg-gray-50 dark:bg-gray-700/50 dark:text-white transition-colors duration-200 ${
-                    errors.code ? 'border-red-300 dark:border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-600 focus:border-violet-500'
-                  }`}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                  disabled={isLoading || success.includes('Redirect')}
-                />
-              </div>
-              {errors.code && <p className="mt-2 text-sm text-red-600 dark:text-red-400 animate-pulse text-center">{errors.code}</p>}
-            </div>
-          </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={isLoading || code.length !== 6 || success.includes('Redirect')}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-violet-600 hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 focus:ring-offset-gray-50 dark:focus:ring-offset-gray-800 disabled:opacity-70 disabled:cursor-not-allowed shadow-md transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:translate-y-0"
-            >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
-                  Verifying...
-                </span>
-              ) : 'Verify'}
-            </button>
+            <label htmlFor="otp-code" className="block text-sm font-medium text-[var(--text)] mb-1.5 text-center">Verification code</label>
+            <input
+              id="otp-code" name="code" type="text" inputMode="numeric" maxLength={6}
+              placeholder="123456"
+              className={`${inputBase} ${errors.code ? inputErr : inputOk} text-center tracking-widest text-xl font-semibold`}
+              value={code}
+              onChange={e => { setCode(e.target.value.replace(/\D/g, '')); if (errors.code) setErrors(p => ({ ...p, code: '' })); }}
+              disabled={isLoading || isRedirecting}
+              aria-invalid={!!errors.code}
+              aria-describedby={errors.code ? 'code-error' : undefined}
+            />
+            {errors.code && <p id="code-error" className="mt-1.5 text-xs text-red-400 text-center" role="alert">{errors.code}</p>}
           </div>
-          
-          <div className="mt-4 text-center text-sm">
+
+          <button
+            type="submit"
+            disabled={isLoading || code.length !== 6 || isRedirecting}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}
+          >
+            {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Verifying…</> : 'Verify account'}
+          </button>
+
+          <p className="text-center text-sm text-[var(--text-secondary)]">
+            Didn't receive a code?{' '}
             <button
               type="button"
               onClick={handleResend}
-              disabled={isResending}
-              className="font-medium text-violet-600 hover:text-violet-500 dark:text-violet-400 dark:hover:text-violet-300 transition-colors disabled:opacity-50"
+              disabled={isResending || isRedirecting}
+              className="font-medium text-[var(--primary)] hover:opacity-80 transition-opacity disabled:opacity-40"
             >
-              {isResending ? 'Sending...' : 'Resend code'}
+              {isResending ? 'Sending…' : 'Resend code'}
             </button>
-          </div>
+          </p>
         </form>
       </motion.div>
     </div>

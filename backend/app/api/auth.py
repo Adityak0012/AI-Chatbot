@@ -1,4 +1,9 @@
+import secrets
+import urllib.parse
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -11,6 +16,11 @@ from app.services.otp_service import create_otp, verify_otp
 from app.database.database import SessionLocal
 from app.utils.security import verify_password, create_access_token, hash_password
 from app.core.config import settings
+
+GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+FRONTEND_CALLBACK_URL = "http://localhost:5173/auth/callback"
 
 router = APIRouter(
     prefix="/auth",
@@ -98,6 +108,79 @@ def reset_password(payload: PasswordResetConfirm, db: Session = Depends(get_db))
     user.password = hash_password(payload.new_password)
     db.commit()
     return {"reset": True}
+
+
+@router.get("/google")
+def google_login():
+    """Return the Google OAuth authorization URL."""
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Google OAuth is not configured")
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "select_account",
+    }
+    url = GOOGLE_AUTH_URL + "?" + urllib.parse.urlencode(params)
+    return {"url": url}
+
+
+@router.get("/google/callback")
+def google_callback(code: str, db: Session = Depends(get_db)):
+    """Exchange Google authorization code for a JWT, then redirect to the frontend."""
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Google OAuth is not configured")
+
+    # Exchange code for tokens
+    with httpx.Client() as client:
+        token_resp = client.post(GOOGLE_TOKEN_URL, data={
+            "code": code,
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "client_secret": settings.GOOGLE_CLIENT_SECRET,
+            "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+            "grant_type": "authorization_code",
+        })
+    if token_resp.status_code != 200:
+        return RedirectResponse(f"{FRONTEND_CALLBACK_URL}?error=token_exchange_failed")
+
+    access_token_google = token_resp.json().get("access_token")
+
+    # Fetch user profile
+    with httpx.Client() as client:
+        info_resp = client.get(GOOGLE_USERINFO_URL, headers={"Authorization": f"Bearer {access_token_google}"})
+    if info_resp.status_code != 200:
+        return RedirectResponse(f"{FRONTEND_CALLBACK_URL}?error=userinfo_failed")
+
+    info = info_resp.json()
+    email = info.get("email")
+    full_name = info.get("name") or email.split("@")[0]
+    avatar_url = info.get("picture")
+
+    if not email:
+        return RedirectResponse(f"{FRONTEND_CALLBACK_URL}?error=no_email")
+
+    # Find or create the user
+    user = get_user_by_email(db, email=email)
+    if not user:
+        user = User(
+            full_name=full_name,
+            email=email,
+            password=hash_password(secrets.token_hex(32)),  # placeholder — not used for OAuth
+            is_verified=True,
+            is_active=True,
+            avatar_url=avatar_url,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif not user.is_verified:
+        user.is_verified = True
+        db.commit()
+
+    jwt = create_access_token(data={"sub": user.email})
+    return RedirectResponse(f"{FRONTEND_CALLBACK_URL}?token={jwt}")
 
 
 @router.post("/test-smtp")

@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
-import { Bot, WifiOff, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { WifiOff, Clock, AlertTriangle, RefreshCw, Zap, BookOpen, Leaf, FlaskConical } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 
 export const ChatArea = () => {
-  const { messages, isSending, sendMessage, loadSession, handleNewChat, currentSessionId, error, errorType } = useChat();
+  const { messages, isSending, sendMessage, loadSession, handleNewChat, currentSessionId, error, errorType, userProfile } = useChat();
   const messagesEndRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,7 +17,11 @@ export const ChatArea = () => {
       navigate(location.pathname, { replace: true, state: {} });
     } else if (location.state?.newChat) {
       handleNewChat();
+      const initialMsg = location.state?.initialMessage;
       navigate(location.pathname, { replace: true, state: {} });
+      if (initialMsg) {
+        setTimeout(() => sendMessage(initialMsg), 300);
+      }
     }
   }, [location.state, currentSessionId, loadSession, handleNewChat, navigate, location.pathname]);
 
@@ -49,16 +53,23 @@ export const ChatArea = () => {
     <div className="flex flex-col flex-1 min-h-0 w-full relative">
       <div id="chat-messages-area" ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-500">
-            <div className="w-16 h-16 bg-[var(--surface-2)] rounded-2xl flex items-center justify-center mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <Bot size={32} className="text-[var(--primary)]" />
-            </div>
-            <h2 className="text-2xl font-bold text-[var(--text)] mb-2 tracking-tight">How can I help you today?</h2>
-            <p className="text-[var(--text-secondary)] max-w-md">
-              I'm your AI assistant. Ask me anything, and I'll do my best to help you out.
-            </p>
+          /* ── Empty state: greeting + composer grouped and centered ── */
+          <div className="h-full flex flex-col items-center justify-center px-4">
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: 600,
+              letterSpacing: '-0.025em',
+              color: 'var(--text)',
+              lineHeight: 1.2,
+              marginBottom: '1.75rem',
+              textAlign: 'center',
+            }}>
+              Good to see you.
+            </h2>
+            <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
           </div>
         ) : (
+          /* ── Messages state ── */
           <div className="w-full max-w-3xl mx-auto pb-40 pt-4 px-4 md:px-0">
             {messages.map((msg, index) => (
               <MessageBubble key={index} message={msg} index={index} />
@@ -71,28 +82,29 @@ export const ChatArea = () => {
         )}
       </div>
 
-
-
-      <div className="shrink-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)] to-transparent pt-10 pb-0 absolute bottom-0 left-0 right-0 w-full z-10 pointer-events-none">
-        <div className="pointer-events-auto">
-          {error && (
-            <div className={`mx-auto max-w-3xl px-4 mb-2`}>
-              <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
-                ${errorType === 'network' ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' :
-                  errorType === 'timeout' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
-                  errorType === 'rate_limit' ? 'bg-purple-500/10 border border-purple-500/20 text-purple-400' :
-                  'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
-                {errorType === 'network' ? <WifiOff size={16} /> :
-                 errorType === 'timeout' ? <Clock size={16} /> :
-                 errorType === 'rate_limit' ? <RefreshCw size={16} /> :
-                 <AlertTriangle size={16} />}
-                <span>{error}</span>
+      {/* Bottom-pinned composer — only when there are messages */}
+      {messages.length > 0 && (
+        <div className="shrink-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)] to-transparent pt-10 pb-0 absolute bottom-0 left-0 right-0 w-full z-10 pointer-events-none">
+          <div className="pointer-events-auto">
+            {error && (
+              <div className="mx-auto max-w-3xl px-4 mb-2">
+                <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium
+                  ${errorType === 'network' ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400' :
+                    errorType === 'timeout' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-400' :
+                    errorType === 'rate_limit' ? 'bg-purple-500/10 border border-purple-500/20 text-purple-400' :
+                    'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+                  {errorType === 'network' ? <WifiOff size={16} /> :
+                   errorType === 'timeout' ? <Clock size={16} /> :
+                   errorType === 'rate_limit' ? <RefreshCw size={16} /> :
+                   <AlertTriangle size={16} />}
+                  <span>{error}</span>
+                </div>
               </div>
-            </div>
-          )}
-          <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
+            )}
+            <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

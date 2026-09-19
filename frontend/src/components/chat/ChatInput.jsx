@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Send, Mic, Paperclip, Square, X, FileText, ChevronUp, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { Send, Mic, Paperclip, Square, X, FileText, ChevronUp, ChevronRight, ChevronLeft, Check, Pencil, BookOpen, Image, AlignLeft, Plus as PlusIcon } from 'lucide-react';
 import { useAutoResizeTextArea } from '../../hooks/useAutoResizeTextArea';
 import { useSpeechToText } from '../../hooks/useSpeechToText';
 import { cn } from '../../utils/cn';
@@ -163,14 +163,16 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
 
   return (
     <div
-      className="relative w-full max-w-4xl mx-auto px-4 pt-4 pb-6 flex flex-col"
+      className="relative w-full max-w-3xl mx-auto px-4 pt-2 pb-4 flex flex-col"
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className={cn(
-        "relative flex flex-col bg-[var(--surface)] rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border transition-all focus-within:ring-2 focus-within:ring-[var(--primary)]/50 focus-within:shadow-[0_8px_40px_rgb(0,0,0,0.16)]",
+        "relative flex flex-col bg-[var(--surface)] rounded-2xl border transition-all duration-200",
+        "shadow-[0_1px_4px_var(--shadow)] focus-within:shadow-[0_2px_12px_var(--shadow)]",
+        "focus-within:ring-2 focus-within:ring-[var(--ring)]",
         isDragging ? "border-[var(--primary)] border-dashed border-2 bg-[var(--primary)]/5" : "border-[var(--border)]"
       )}>
         {fileError && (
@@ -188,20 +190,16 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
 
         {/* Image Preview Strip */}
         {files.length > 0 && (
-          <div className="flex gap-3 p-3 pb-0 overflow-x-auto custom-scrollbar">
+          <div className="flex gap-3 px-4 pt-3 overflow-x-auto custom-scrollbar">
             {files.map((file, index) => (
               <div key={index} className="relative group w-16 h-16 shrink-0 rounded-xl overflow-hidden border border-[var(--border)] shadow-sm flex items-center justify-center bg-[var(--surface-2)]">
                 {file.type.startsWith('image/') ? (
-                  <img 
-                    src={URL.createObjectURL(file)} 
-                    alt={file.name} 
-                    className="w-full h-full object-cover" 
-                  />
+                  <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" />
                 ) : (
                   <FileText size={24} className="text-[var(--text-secondary)]" />
                 )}
-                <button 
-                  onClick={() => setFiles(prev => prev.filter((_, i) => i !== index))} 
+                <button
+                  onClick={() => setFiles(prev => prev.filter((_, i) => i !== index))}
                   className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
                   title="Remove file"
                 >
@@ -212,183 +210,190 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
           </div>
         )}
 
-        <div className="flex items-end gap-2 p-2 pl-4">
-          <AttachmentMenu onFilesSelected={(newFiles) => validateAndAddFiles(newFiles)} activeSkill={activeSkill} onSkillChange={setActiveSkill} isWebSearchOn={webSearchOn} onWebSearchToggle={() => setWebSearchOn(prev => !prev)} currentSessionId={currentSessionId} />
-
+        {/* Textarea — top zone */}
+        <div className="px-4 pt-4 pb-2">
           <textarea
             ref={textAreaRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          placeholder="Message AI Chatbot Pro..."
-            className="flex-1 max-h-[200px] bg-transparent border-none focus:ring-0 resize-none py-3 text-[var(--text)] placeholder-[var(--placeholder)] outline-none text-base custom-scrollbar"
-            rows={1}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            placeholder="Ask anything..."
+            className="w-full max-h-[180px] bg-transparent border-none focus:ring-0 resize-none text-[var(--text)] placeholder-[var(--placeholder)] outline-none text-[15px] leading-relaxed custom-scrollbar"
+            rows={3}
             disabled={isSending}
           />
+        </div>
 
-        <div className="flex items-center gap-1 mb-1">
-          <div className="relative">
-            <button
-              onClick={() => { setIsPickerOpen(prev => !prev); setMenuView('main'); }}
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
-              title="Model & effort"
-            >
-              <span className="hidden sm:inline text-[var(--text)]">{currentModelOption.label}</span>
-              <span>{currentEffortOption.label}</span>
-              <ChevronUp size={12} className={cn("transition-transform", isPickerOpen ? "rotate-0" : "rotate-180")} />
-            </button>
+        {/* Toolbar — bottom zone */}
+        <div className="flex items-center justify-between px-3 pb-3">
+          <AttachmentMenu onFilesSelected={(newFiles) => validateAndAddFiles(newFiles)} activeSkill={activeSkill} onSkillChange={setActiveSkill} isWebSearchOn={webSearchOn} onWebSearchToggle={() => setWebSearchOn(prev => !prev)} currentSessionId={currentSessionId} />
 
-            {isPickerOpen && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setIsPickerOpen(false)} />
-                <div className="absolute bottom-full mb-2 left-0 z-40 w-64 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg p-1.5">
-                  {menuView === 'main' && (
-                    <>
-                      <div className="px-3 py-2.5 flex items-start justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-[var(--text)]">{currentModelOption.label}</p>
-                          <p className="text-xs text-[var(--text-secondary)]">{currentModelOption.description}</p>
+          <div className="flex items-center gap-1">
+            <div className="relative">
+              <button
+                onClick={() => { setIsPickerOpen(prev => !prev); setMenuView('main'); }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
+                title="Model & effort"
+              >
+                <span className="hidden sm:inline">{currentModelOption.label}</span>
+                <span>{currentEffortOption.label}</span>
+                <ChevronUp size={12} className={cn("transition-transform duration-150", isPickerOpen ? "rotate-180" : "rotate-0")} />
+              </button>
+
+              {isPickerOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsPickerOpen(false)} />
+                  <div className="absolute bottom-full mb-2 right-0 z-40 w-64 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-lg p-1.5">
+                    {menuView === 'main' && (
+                      <>
+                        <div className="px-3 py-2.5 flex items-start justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-[var(--text)]">{currentModelOption.label}</p>
+                            <p className="text-xs text-[var(--text-secondary)]">{currentModelOption.description}</p>
+                          </div>
+                          <Check size={16} className="text-[var(--primary)] mt-0.5 shrink-0" />
                         </div>
-                        <Check size={16} className="text-[var(--primary)] mt-0.5 shrink-0" />
-                      </div>
-                      <div className="h-px bg-[var(--border)] my-1" />
-                      <button
-                        onClick={() => setMenuView('effort')}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
-                      >
-                        <span>Effort</span>
-                        <span className="flex items-center gap-1 text-[var(--text-secondary)]">
-                          {currentEffortOption.label}
-                          <ChevronRight size={14} />
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setMenuView('models')}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[var(--text)] hover:bg-[var(--hover)] transition-colors"
-                      >
-                        <span>More models</span>
-                        <ChevronRight size={14} className="text-[var(--text-secondary)]" />
-                      </button>
-                    </>
-                  )}
-
-                  {menuView === 'effort' && (
-                    <>
-                      <button
-                        onClick={() => setMenuView('main')}
-                        className="w-full flex items-center gap-1 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)]"
-                      >
-                        <ChevronLeft size={14} /> Effort
-                      </button>
-                      <div className="h-px bg-[var(--border)] my-1" />
-                      {EFFORT_OPTIONS.map(opt => (
-                        <button
-                          key={opt.id}
-                          onClick={() => handleSelectEffort(opt.id)}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors",
-                            effort === opt.id ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "text-[var(--text)] hover:bg-[var(--hover)]"
-                          )}
-                        >
-                          <div>
-                            <p className="text-sm font-medium">{opt.label}</p>
-                            <p className="text-xs text-[var(--text-secondary)]">{opt.description}</p>
-                          </div>
-                          {effort === opt.id && <Check size={16} />}
+                        <div className="h-px bg-[var(--border)] my-1" />
+                        <button onClick={() => setMenuView('effort')} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[var(--text)] hover:bg-[var(--hover)] transition-colors">
+                          <span>Effort</span>
+                          <span className="flex items-center gap-1 text-[var(--text-secondary)]">{currentEffortOption.label}<ChevronRight size={14} /></span>
                         </button>
-                      ))}
-                    </>
-                  )}
-
-                  {menuView === 'models' && (
-                    <>
-                      <button
-                        onClick={() => setMenuView('main')}
-                        className="w-full flex items-center gap-1 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)]"
-                      >
-                        <ChevronLeft size={14} /> More models
-                      </button>
-                      <div className="h-px bg-[var(--border)] my-1" />
-                      {MODEL_OPTIONS.map(opt => (
-                        <button
-                          key={opt.id}
-                          onClick={() => handleSelectModel(opt.id)}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors",
-                            model === opt.id ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "text-[var(--text)] hover:bg-[var(--hover)]"
-                          )}
-                        >
-                          <div>
-                            <p className="text-sm font-medium">{opt.label}</p>
-                            <p className="text-xs text-[var(--text-secondary)]">{opt.description}</p>
-                          </div>
-                          {model === opt.id && <Check size={16} />}
+                        <button onClick={() => setMenuView('models')} className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-[var(--text)] hover:bg-[var(--hover)] transition-colors">
+                          <span>More models</span>
+                          <ChevronRight size={14} className="text-[var(--text-secondary)]" />
                         </button>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </>
+                      </>
+                    )}
+                    {menuView === 'effort' && (
+                      <>
+                        <button onClick={() => setMenuView('main')} className="w-full flex items-center gap-1 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)]">
+                          <ChevronLeft size={14} /> Effort
+                        </button>
+                        <div className="h-px bg-[var(--border)] my-1" />
+                        {EFFORT_OPTIONS.map(opt => (
+                          <button key={opt.id} onClick={() => handleSelectEffort(opt.id)}
+                            className={cn("w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors",
+                              effort === opt.id ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "text-[var(--text)] hover:bg-[var(--hover)]"
+                            )}
+                          >
+                            <div><p className="text-sm font-medium">{opt.label}</p><p className="text-xs text-[var(--text-secondary)]">{opt.description}</p></div>
+                            {effort === opt.id && <Check size={16} />}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                    {menuView === 'models' && (
+                      <>
+                        <button onClick={() => setMenuView('main')} className="w-full flex items-center gap-1 px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)]">
+                          <ChevronLeft size={14} /> More models
+                        </button>
+                        <div className="h-px bg-[var(--border)] my-1" />
+                        {MODEL_OPTIONS.map(opt => (
+                          <button key={opt.id} onClick={() => handleSelectModel(opt.id)}
+                            className={cn("w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors",
+                              model === opt.id ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "text-[var(--text)] hover:bg-[var(--hover)]"
+                            )}
+                          >
+                            <div><p className="text-sm font-medium">{opt.label}</p><p className="text-xs text-[var(--text-secondary)]">{opt.description}</p></div>
+                            {model === opt.id && <Check size={16} />}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {supported && (
+              <button
+                onClick={toggleListening}
+                className={cn("p-2 rounded-xl transition-colors",
+                  isListening ? "bg-red-500/10 text-red-500 animate-pulse" : "text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"
+                )}
+                title={isListening ? "Stop listening" : "Use microphone"}
+              >
+                <Mic size={18} />
+              </button>
+            )}
+
+            {isSending ? (
+              <button className="p-2 bg-[var(--surface-2)] text-[var(--text-secondary)] rounded-xl" title="Stop generating">
+                <Square size={18} fill="currentColor" className="scale-75" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={(!input.trim() && files.length === 0)}
+                className={cn("p-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95",
+                  (input.trim() || files.length > 0)
+                    ? "bg-[var(--text)] text-[var(--bg)] hover:opacity-80"
+                    : "bg-[var(--surface-2)] text-[var(--text-secondary)] opacity-40 cursor-not-allowed"
+                )}
+                title="Send message"
+              >
+                <Send size={16} />
+              </button>
             )}
           </div>
-
-          {supported && (
-            <button
-              onClick={toggleListening}
-              className={cn(
-                "p-2 rounded-xl transition-colors",
-                isListening 
-                  ? "bg-red-500/10 text-red-500 animate-pulse" 
-                  : "text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface-2)]"
-              )}
-              title={isListening ? "Stop listening" : "Use microphone"}
-            >
-              <Mic size={20} />
-            </button>
-          )}
-
-          {isSending ? (
-            <button
-              className="p-2 bg-[var(--surface-2)] text-[var(--text-secondary)] rounded-xl transition-colors"
-              title="Stop generating (UI only)"
-            >
-              <Square size={20} fill="currentColor" className="scale-75" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSend}
-              disabled={(!input.trim() && files.length === 0)}
-              className={cn(
-                "p-2 rounded-xl transition-all duration-300 hover:scale-105 active:scale-95",
-                (input.trim() || files.length > 0)
-                  ? "bg-[var(--primary)] text-white hover:opacity-90 shadow-[0_2px_10px_var(--shadow)]"
-                  : "bg-[var(--surface-2)] text-[var(--text-secondary)] opacity-50 cursor-not-allowed"
-              )}
-              title="Send message"
-            >
-              <Send size={20} />
-            </button>
-          )}
-        </div>
         </div>
       </div>
+
+      {/* Action pills — only shown on empty chat */}
+      {(messages || []).length === 0 && (
+        <div className="flex flex-wrap gap-2 mt-3 justify-center">
+          {[
+            { Icon: Pencil,    label: 'Help me write',  prompt: 'Help me write ' },
+            { Icon: BookOpen,  label: 'Learn about',    prompt: 'Explain to me: ' },
+            { Icon: Image,     label: 'Analyze image',  prompt: 'Analyze this image: ' },
+            { Icon: AlignLeft, label: 'Summarize text', prompt: 'Summarize the following: ' },
+          ].map(({ Icon, label, prompt }) => (
+            <button
+              key={label}
+              onClick={() => { setInput(prompt); textAreaRef.current?.focus(); }}
+              style={{
+                height: 34,
+                padding: '0 14px',
+                borderRadius: 999,
+                fontSize: 13,
+                fontWeight: 500,
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'border-color 0.15s, color 0.15s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-secondary)'; e.currentTarget.style.color = 'var(--text)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+            >
+              <Icon size={13} aria-hidden="true" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {(() => {
         const totalChars = (messages || []).reduce((sum, m) => sum + (m.content?.length || 0), 0);
         const totalTokens = Math.ceil(totalChars / 4);
         const inputTokens = Math.ceil(input.length / 4);
         return (
           <div className="text-center mt-3 text-xs text-[var(--text-secondary)] flex items-center justify-center gap-2 flex-wrap">
-            <span>AI Chatbot Pro can make mistakes. Consider verifying important information.</span>
+            <span>AI Chatbot Pro can make mistakes. Verify important information.</span>
             <div className="flex items-center gap-1.5">
               {input.length > 0 && (
-                <span className="flex items-center gap-1 text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded-full border border-[var(--primary)]/20">
+                <span className="flex items-center gap-1 text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded-full border border-[var(--primary)]/20" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   ~{inputTokens} tokens
                 </span>
               )}
               {totalTokens > 0 && (
-                <span className="flex items-center gap-1 text-[10px] text-[var(--placeholder)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--border)]">
-                  Session: ~{totalTokens.toLocaleString()} tokens
+                <span className="flex items-center gap-1 text-[10px] text-[var(--placeholder)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--border)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  ~{totalTokens.toLocaleString()} tokens
                 </span>
               )}
             </div>

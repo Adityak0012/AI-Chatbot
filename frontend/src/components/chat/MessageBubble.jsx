@@ -132,18 +132,16 @@ export const MessageBubble = ({ message, isTyping, index }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 18 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: 'easeOut' }}
+      transition={{ duration: 0.28, ease: 'easeOut' }}
       className={cn(
-        "group w-full flex gap-3 md:gap-4 py-2 md:py-3",
-        isAi ? "justify-start" : "justify-start flex-row-reverse"
+        "group w-full flex py-2 md:py-2.5",
+        isAi ? "justify-start" : "justify-end"
       )}
     >
-
-      
       <div className={cn(
-        "max-w-[80%] min-w-0 flex flex-col",
+        "max-w-[82%] md:max-w-[75%] min-w-0 flex flex-col",
         textSizes[fontSize] || "text-base",
         isAi ? "items-start" : "items-end"
       )}>
@@ -151,29 +149,30 @@ export const MessageBubble = ({ message, isTyping, index }) => {
         
         {isTyping ? (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            style={{ borderLeft: '3px solid var(--primary)', borderRadius: '0 10px 10px 0' }}
-            className="bg-[var(--surface-2)] px-5 py-4 flex gap-1.5 items-center"
+            transition={{ duration: 0.22 }}
+            className="bg-[var(--surface-2)] border border-[var(--border)] px-5 py-4 flex gap-1.5 items-center rounded-2xl rounded-tl-sm"
+            aria-label="AI is typing"
+            role="status"
           >
             {[0, 0.18, 0.36].map((delay, i) => (
               <motion.span
                 key={i}
+                aria-hidden="true"
                 className="block w-2 h-2 rounded-full bg-[var(--primary)]"
-                animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
-                transition={{ repeat: Infinity, duration: 0.7, delay, ease: 'easeInOut' }}
+                animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+                transition={{ repeat: Infinity, duration: 0.75, delay, ease: 'easeInOut' }}
               />
             ))}
           </motion.div>
         ) : (
           <div
-            style={isAi ? { borderLeft: '3px solid var(--primary)', borderRadius: '0 10px 10px 0' } : undefined}
             className={cn(
               "max-w-none break-words",
-              isAi 
-                ? "bg-[var(--surface-2)] px-4 py-3 prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-[var(--border)] prose-table:text-[var(--text)] prose-thead:text-[var(--text)] prose-th:text-[var(--text)] prose-tr:text-[var(--text)] prose-tr:border-[var(--border)] prose-td:text-[var(--text)]"
-                : "bg-[var(--primary)] text-white rounded-2xl rounded-tr-sm px-4 py-2 mt-1 shadow-sm prose prose-headings:text-white prose-p:text-white prose-strong:text-white prose-a:text-white hover:prose-a:text-gray-200 prose-code:text-[var(--text)] prose-ul:text-white prose-ol:text-white prose-li:text-white prose-blockquote:text-white/80 prose-blockquote:border-white/30 prose-table:text-white prose-thead:text-white prose-th:text-white prose-tr:text-white prose-td:text-white"
+              isAi
+                ? "bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl rounded-tl-sm px-4 py-3 prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-[var(--border)] prose-table:text-[var(--text)] prose-thead:text-[var(--text)] prose-th:text-[var(--text)] prose-tr:text-[var(--text)] prose-tr:border-[var(--border)] prose-td:text-[var(--text)]"
+                : "bg-[var(--primary)] text-white rounded-2xl rounded-tr-sm px-4 py-2.5 mt-1 shadow-sm prose prose-headings:text-white prose-p:text-white prose-strong:text-white prose-a:text-white hover:prose-a:text-blue-100 prose-code:text-white/90 prose-ul:text-white prose-ol:text-white prose-li:text-white prose-blockquote:text-white/80 prose-blockquote:border-white/30 prose-table:text-white prose-thead:text-white prose-th:text-white prose-tr:text-white prose-td:text-white"
             )}
           >
             <ReactMarkdown
@@ -261,24 +260,25 @@ export const MessageBubble = ({ message, isTyping, index }) => {
         )}
 
         {isAi && !isTyping && (
-          <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={handleCopy} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-md hover:bg-[var(--hover)] transition-colors" title="Copy text">
-              {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+          <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" role="toolbar" aria-label="Message actions">
+            <button onClick={handleCopy} aria-label={copied ? 'Copied' : 'Copy message'} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--hover)] transition-colors">
+              {copied ? <Check size={15} aria-hidden="true" className="text-green-500" /> : <Copy size={15} aria-hidden="true" />}
             </button>
-            <button onClick={handleToggleSave} className={cn("p-1.5 rounded-md hover:bg-[var(--hover)] transition-colors", isSaved ? "text-[var(--primary)]" : "text-[var(--text-secondary)] hover:text-[var(--primary)]")} title={isSaved ? "Unsave" : "Save message"}>
-              <Bookmark size={16} className={isSaved ? "fill-current" : ""} />
+            <button onClick={handleToggleSave} aria-label={isSaved ? 'Unsave message' : 'Save message'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', isSaved ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]')}>
+              <Bookmark size={15} aria-hidden="true" className={isSaved ? 'fill-current' : ''} />
             </button>
-            <button onClick={handleShare} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-md hover:bg-[var(--hover)] transition-colors" title="Share response">
-              <Share2 size={16} />
+            <button onClick={handleShare} aria-label="Share response" className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--hover)] transition-colors">
+              <Share2 size={15} aria-hidden="true" />
             </button>
-            <button onClick={handleRegenerate} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-md hover:bg-[var(--hover)] transition-colors" title="Regenerate">
-              <RefreshCw size={16} />
+            <button onClick={handleRegenerate} aria-label="Regenerate response" className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--hover)] transition-colors">
+              <RefreshCw size={15} aria-hidden="true" />
             </button>
-            <button onClick={handleLike} className={cn("p-1.5 rounded-md hover:bg-[var(--hover)] transition-colors", feedback === 'like' ? "text-[var(--primary)]" : "text-[var(--text-secondary)] hover:text-[var(--primary)]")} title="Good response">
-              <ThumbsUp size={16} className={feedback === 'like' ? "fill-current" : ""} />
+            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
+            <button onClick={handleLike} aria-label="Good response" aria-pressed={feedback === 'like'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', feedback === 'like' ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]')}>
+              <ThumbsUp size={15} aria-hidden="true" className={feedback === 'like' ? 'fill-current' : ''} />
             </button>
-            <button onClick={handleDislike} className={cn("p-1.5 rounded-md hover:bg-[var(--hover)] transition-colors", feedback === 'dislike' ? "text-red-500" : "text-[var(--text-secondary)] hover:text-red-500")} title="Bad response">
-              <ThumbsDown size={16} className={feedback === 'dislike' ? "fill-current" : ""} />
+            <button onClick={handleDislike} aria-label="Bad response" aria-pressed={feedback === 'dislike'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', feedback === 'dislike' ? 'text-red-500' : 'text-[var(--text-secondary)] hover:text-red-500')}>
+              <ThumbsDown size={15} aria-hidden="true" className={feedback === 'dislike' ? 'fill-current' : ''} />
             </button>
           </div>
         )}
