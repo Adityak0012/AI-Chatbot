@@ -43,6 +43,8 @@ export const ChatArea = () => {
     }
   }, [messages, isSending]);
 
+
+
   return (
     <div className="flex flex-col flex-1 min-h-0 w-full relative">
       <div id="chat-messages-area" ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
@@ -68,6 +70,8 @@ export const ChatArea = () => {
           </div>
         )}
       </div>
+
+
 
       <div className="shrink-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)] to-transparent pt-10 pb-0 absolute bottom-0 left-0 right-0 w-full z-10 pointer-events-none">
         <div className="pointer-events-auto">

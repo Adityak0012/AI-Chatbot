@@ -72,7 +72,7 @@ def chat_with_ai(
         title = prompt[:50] + ("..." if len(prompt) > 50 else "")
         if not title and files:
             title = "Image Upload"
-        chat_session = ChatSession(user_id=current_user.id, title=title, project_id=project_id)
+        chat_session = ChatSession(user_id=current_user.id, title=title, project_id=project_id, ai_titled=False)
         db.add(chat_session)
         db.commit()
         db.refresh(chat_session)
@@ -206,10 +206,27 @@ def chat_with_ai(
                         ai_message = ChatMessage(session_id=session_id, role="ai", content=full_response)
                         db.add(ai_message)
                         chat_session.updated_at = func.now()
+
+                        # Auto-generate title from first AI reply
+                        if not getattr(chat_session, 'ai_titled', False):
+                            try:
+                                from app.services.ai_service import generate_ai_response
+                                title_prompt = (
+                                    f"Generate a short, clear chat title (max 6 words, no quotes, no punctuation at end) "
+                                    f"for a conversation that starts with this user message:\n\n\"{prompt}\""
+                                )
+                                generated_title = generate_ai_response(title_prompt)
+                                generated_title = generated_title.strip().strip('"\'').strip()
+                                if generated_title:
+                                    chat_session.title = generated_title[:80]
+                                    chat_session.ai_titled = True
+                            except Exception:
+                                pass
+
                         db.commit()
                 except Exception:
                     db.rollback()
-                yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'title': chat_session.title})}\n\n"
 
         return FastAPIStreamingResponse(
             stream_generator(),

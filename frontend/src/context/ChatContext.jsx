@@ -267,7 +267,7 @@ export const ChatProvider = ({ children }) => {
         const snap = pendingContent;
         setMessages(prev => {
           const updated = [...prev];
-          updated[updated.length - 1] = { role: 'ai', content: snap };
+          updated[updated.length - 1] = { role: 'ai', content: snap, isStreaming: true };
           return updated;
         });
         animFrameId = null;
@@ -287,6 +287,11 @@ export const ChatProvider = ({ children }) => {
               const data = JSON.parse(line.slice(6));
               if (data.done) {
                 newSessionId = data.session_id;
+                if (data.title) {
+                  setSessions(prev =>
+                    prev.map(s => s.id === data.session_id ? { ...s, title: data.title } : s)
+                  );
+                }
               } else if (data.error) {
                 setErrorWithType(data.error, 'stream');
               } else if (data.content) {
@@ -305,7 +310,7 @@ export const ChatProvider = ({ children }) => {
       if (animFrameId) cancelAnimationFrame(animFrameId);
       setMessages(prev => {
         const updated = [...prev];
-        updated[updated.length - 1] = { role: 'ai', content: streamedContent };
+        updated[updated.length - 1] = { role: 'ai', content: streamedContent, isStreaming: false };
         return updated;
       });
 

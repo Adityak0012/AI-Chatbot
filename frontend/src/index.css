@@ -90,3 +90,8 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+:root {
+  --primary-rgb: 234, 179, 8;
+}
+

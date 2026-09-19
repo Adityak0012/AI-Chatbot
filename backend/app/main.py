@@ -69,6 +69,9 @@ with engine.connect() as _conn:
     _conn.execute(text(
         "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS project_id VARCHAR(36) REFERENCES projects(id) ON DELETE SET NULL"
     ))
+    _conn.execute(text(
+        "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS ai_titled BOOLEAN NOT NULL DEFAULT FALSE"
+    ))
     _conn.commit()
 
 app.include_router(health_router)

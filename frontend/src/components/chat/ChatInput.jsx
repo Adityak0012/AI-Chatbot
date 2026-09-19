@@ -4,8 +4,10 @@ import { useAutoResizeTextArea } from '../../hooks/useAutoResizeTextArea';
 import { useSpeechToText } from '../../hooks/useSpeechToText';
 import { cn } from '../../utils/cn';
 import { AttachmentMenu } from '../ui/AttachmentMenu';
+import { useChat } from '../../context/ChatContext';
 
 export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
+  const { messages } = useChat() || {};
   const [input, setInput] = useState('');
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -371,10 +373,28 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
         </div>
         </div>
       </div>
-      <div className="text-center mt-3 text-xs text-[var(--text-secondary)]">
-        AI Chatbot Pro can make mistakes. Consider verifying important information.
-        <span className="ml-2 text-[10px] text-[var(--placeholder)]">{input.length} chars</span>
-      </div>
+      {(() => {
+        const totalChars = (messages || []).reduce((sum, m) => sum + (m.content?.length || 0), 0);
+        const totalTokens = Math.ceil(totalChars / 4);
+        const inputTokens = Math.ceil(input.length / 4);
+        return (
+          <div className="text-center mt-3 text-xs text-[var(--text-secondary)] flex items-center justify-center gap-2 flex-wrap">
+            <span>AI Chatbot Pro can make mistakes. Consider verifying important information.</span>
+            <div className="flex items-center gap-1.5">
+              {input.length > 0 && (
+                <span className="flex items-center gap-1 text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded-full border border-[var(--primary)]/20">
+                  ~{inputTokens} tokens
+                </span>
+              )}
+              {totalTokens > 0 && (
+                <span className="flex items-center gap-1 text-[10px] text-[var(--placeholder)] bg-[var(--surface-2)] px-2 py-0.5 rounded-full border border-[var(--border)]">
+                  Session: ~{totalTokens.toLocaleString()} tokens
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

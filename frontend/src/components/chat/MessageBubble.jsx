@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -9,8 +9,57 @@ import { cn } from '../../utils/cn';
 import { useSettings } from '../../context/SettingsContext';
 import { useChat } from '../../context/ChatContext';
 
+const CodeBlock = ({ language, code, ...props }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative group/code my-4 rounded-xl overflow-hidden border border-[var(--border)]">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a2e] border-b border-[var(--border)]">
+        <span className="text-xs font-mono text-[var(--text-secondary)] lowercase tracking-wide">
+          {language}
+        </span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--primary)] transition-colors px-2 py-1 rounded-md hover:bg-[var(--hover)]"
+        >
+          {copied ? (
+            <>
+              <Check size={13} />
+              <span>Copied!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={13} />
+              <span>Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Code */}
+      <SyntaxHighlighter
+        style={vscDarkPlus}
+        language={language}
+        PreTag="div"
+        className="!rounded-none !my-0 text-sm"
+        {...props}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
+
 export const MessageBubble = ({ message, isTyping, index }) => {
   const isAi = message.role === 'ai';
+  const isStreaming = message.isStreaming === true;
   const { fontSize } = useSettings();
   const { regenerateResponse, saveMessage, unsaveMessage } = useChat() || {};
   const [copied, setCopied] = useState(false);
@@ -83,8 +132,9 @@ export const MessageBubble = ({ message, isTyping, index }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
       className={cn(
         "group w-full flex gap-3 md:gap-4 py-2 md:py-3",
         isAi ? "justify-start" : "justify-start flex-row-reverse"
@@ -100,11 +150,22 @@ export const MessageBubble = ({ message, isTyping, index }) => {
 
         
         {isTyping ? (
-          <div className="flex gap-1 items-center h-6">
-            <motion.div className="w-1.5 h-1.5 bg-[var(--text-secondary)] rounded-full" animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} />
-            <motion.div className="w-1.5 h-1.5 bg-[var(--text-secondary)] rounded-full" animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} />
-            <motion.div className="w-1.5 h-1.5 bg-[var(--text-secondary)] rounded-full" animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} />
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ borderLeft: '3px solid var(--primary)', borderRadius: '0 10px 10px 0' }}
+            className="bg-[var(--surface-2)] px-5 py-4 flex gap-1.5 items-center"
+          >
+            {[0, 0.18, 0.36].map((delay, i) => (
+              <motion.span
+                key={i}
+                className="block w-2 h-2 rounded-full bg-[var(--primary)]"
+                animate={{ y: [0, -5, 0], opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 0.7, delay, ease: 'easeInOut' }}
+              />
+            ))}
+          </motion.div>
         ) : (
           <div
             style={isAi ? { borderLeft: '3px solid var(--primary)', borderRadius: '0 10px 10px 0' } : undefined}
@@ -117,24 +178,23 @@ export const MessageBubble = ({ message, isTyping, index }) => {
           >
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              key={isStreaming ? message.content.length : 'done'}
               components={{
                 code({node, inline, className, children, ...props}) {
                   const match = /language-(\w+)/.exec(className || '')
-                  return !inline && match ? (
-                    <SyntaxHighlighter
-                      style={vscDarkPlus}
-                      language={match[1]}
-                      PreTag="div"
-                      className="rounded-xl overflow-hidden text-sm my-4"
-                      {...props}
-                    >
-                      {String(children).replace(/\n$/, '')}
-                    </SyntaxHighlighter>
-                  ) : (
+                  const codeString = String(children).replace(/\n$/, '');
+
+                  if (!inline && match) {
+                    return (
+                      <CodeBlock language={match[1]} code={codeString} {...props} />
+                    );
+                  }
+
+                  return (
                     <code className="bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-0.5 font-mono text-sm text-[var(--text)] inline-block" {...props}>
                       {children}
                     </code>
-                  )
+                  );
                 },
                 img({node, src, ...props}) {
                   const fullSrc = src?.startsWith('/') 
@@ -190,6 +250,13 @@ export const MessageBubble = ({ message, isTyping, index }) => {
             >
               {message.content}
             </ReactMarkdown>
+            {isStreaming && (
+              <motion.span
+                className="inline-block w-[2px] h-[1em] bg-[var(--primary)] ml-0.5 align-middle"
+                animate={{ opacity: [1, 0, 1] }}
+                transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
+              />
+            )}
           </div>
         )}
 
