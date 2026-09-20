@@ -90,7 +90,9 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
 
   const handleSend = () => {
     if ((!input.trim() && files.length === 0) || isSending) return;
-    onSend(input, files, effort, model, null, activeSkill, webSearchOn);
+    const hasImages = files.some(f => f.type.startsWith('image/'));
+    const modelToSend = hasImages ? null : model;
+    onSend(input, files, effort, modelToSend, null, activeSkill, webSearchOn);
     setInput('');
     setFiles([]);
   };
@@ -170,7 +172,7 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
       onDrop={handleDrop}
     >
       <div className={cn(
-        "relative flex flex-col bg-[var(--surface)] rounded-2xl border transition-all duration-200",
+        "chat-input-box relative flex flex-col bg-[var(--surface)] rounded-2xl border transition-all duration-200",
         "shadow-[0_1px_4px_var(--shadow)] focus-within:shadow-[0_0_0_2px_rgba(0,0,0,0.08)]",
         "focus-within:border-[#111111]",
         isDragging ? "border-[var(--primary)] border-dashed border-2 bg-[var(--primary)]/5" : "border-[#e5e7eb]"

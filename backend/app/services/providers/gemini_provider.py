@@ -4,15 +4,9 @@ import requests
 import json
 from fastapi import HTTPException
 from app.services.providers.base import BaseAIProvider
+from app.core.config import settings
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"))
-    load_dotenv(".env")
-except ImportError:
-    pass
-
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-3.6-flash"
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
@@ -22,19 +16,22 @@ class GeminiProvider(BaseAIProvider):
         return True
 
     def _get_api_key(self) -> str:
-        key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY", "")
+        key = getattr(settings, "GEMINI_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
         if not key:
             raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not set in environment variables.")
         return key
 
     def _read_image_base64(self, img_url: str) -> tuple[str, str]:
-        """Returns (base64_data, mime_type) for the image at img_url (a /static/uploads/... path)."""
         if img_url.startswith("/"):
             img_url = img_url[1:]
-        current_dir = os.path.dirname(__file__)
-        app_dir = os.path.dirname(os.path.dirname(current_dir))
-        file_path = os.path.join(app_dir, img_url)
+        current_dir = os.path.dirname(os.path.abspath(__file__))  # providers/
+        services_dir = os.path.dirname(current_dir)               # services/
+        app_dir = os.path.dirname(services_dir)                   # app/
+        backend_dir = os.path.dirname(app_dir)                    # backend/
+        file_path = os.path.join(backend_dir, img_url)
+        print(f"DEBUG image path: {file_path}", flush=True)
         if not os.path.exists(file_path):
+            print(f"DEBUG file not found: {file_path}", flush=True)
             return "", "image/jpeg"
         ext = file_path.lower().rsplit(".", 1)[-1]
         mime_map = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
@@ -61,6 +58,8 @@ class GeminiProvider(BaseAIProvider):
                 continue
             role = "user" if msg.get("role") == "user" else "model"
             contents.append({"role": role, "parts": [{"text": text}]})
+        while contents and contents[-1]["role"] == "model":
+            contents.pop()
         return contents
 
     def generate_response(self, prompt: str, images: list = None, model: str = None, history: list = None) -> str:

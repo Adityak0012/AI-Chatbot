@@ -181,7 +181,7 @@ export const MessageBubble = ({ message, isTyping, index }) => {
       >
         <div
           className={cn("max-w-[75%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-[var(--text)] break-words", textSizes[fontSize] || "text-[15px]")}
-          style={{ background: '#F0F0F0' }}
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {message.content}

@@ -29,21 +29,21 @@
 }
 
 :root.dark {
-  --bg: #0D0F14;
-  --sidebar: #0A0C10;
-  --surface: #141720;
-  --surface-2: #1C2030;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #E8EAF0;
-  --text-secondary: #6B7280;
-  --placeholder: #4B5563;
+  --bg: #09090b;
+  --sidebar: #09090b;
+  --surface: #111113;
+  --surface-2: #18181b;
+  --border: #27272a;
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --placeholder: #52525b;
   --primary: #6366F1;
   --primary-dark: #4F46E5;
-  --hover: rgba(99, 102, 241, 0.10);
+  --hover: #1c1c1f;
   --shadow: rgba(0, 0, 0, 0.5);
   --accent: #3B82F6;
-  --header-bg: #0F1117;
-  --ring: rgba(255, 255, 255, 0.12);
+  --header-bg: #09090b;
+  --ring: rgba(255, 255, 255, 0.10);
 
   color-scheme: dark;
 }
@@ -76,27 +76,49 @@
 
 /* ── Sidebar tokens — dark mode ── */
 :root.dark {
-  --sb-bg: #0F1117;
+  --sb-bg: #09090b;
   --sb-top-glow: none;
-  --sb-border: rgba(255, 255, 255, 0.06);
-  --sb-divider: rgba(255, 255, 255, 0.05);
-  --sb-text: rgba(255, 255, 255, 0.88);
-  --sb-text-muted: rgba(255, 255, 255, 0.38);
-  --sb-text-dim: rgba(255, 255, 255, 0.18);
-  --sb-hover: rgba(255, 255, 255, 0.06);
+  --sb-border: #27272a;
+  --sb-divider: #27272a;
+  --sb-text: #ffffff;
+  --sb-text-muted: #a1a1aa;
+  --sb-text-dim: #52525b;
+  --sb-hover: #18181b;
   --sb-surface: rgba(255, 255, 255, 0.04);
   --sb-surface-2: rgba(255, 255, 255, 0.07);
-  --sb-active-bg: rgba(255, 255, 255, 0.08);
+  --sb-active-bg: #27272a;
   --sb-active-border: transparent;
-  --sb-accent: rgba(255,255,255,0.88);
+  --sb-accent: #ffffff;
   --sb-accent-blue: #3b82f6;
   --sb-gradient: linear-gradient(135deg, #6366f1, #3b82f6);
   --sb-avatar-gradient: linear-gradient(135deg, #ec4899, #f43f5e);
-  --sb-dropdown-bg: #16192A;
-  --sb-dropdown-border: rgba(255, 255, 255, 0.08);
+  --sb-dropdown-bg: #111113;
+  --sb-dropdown-border: #27272a;
   --sb-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
   --sb-side-shadow: none;
+  --accent-dark: #a1a1aa;
 }
+
+/* ── Sidebar nav item dark mode overrides ── */
+:root.dark .sb-nav-item {
+  color: #a1a1aa !important;
+}
+:root.dark .sb-nav-item .sb-icon {
+  color: #a1a1aa !important;
+}
+:root.dark .sb-nav-item[aria-current="page"] {
+  color: #ffffff !important;
+  background: #27272a !important;
+}
+:root.dark .sb-nav-item[aria-current="page"] .sb-icon {
+  color: #ffffff !important;
+}
+:root.dark .sb-nav-item:hover:not([aria-current="page"]) {
+  background: #18181b !important;
+  color: #d4d4d8 !important;
+}
+
+/* ── Sidebar right border dark mode (now uses sb.border token directly) ── */
 
 html, #root {
   height: 100%;
@@ -126,6 +148,21 @@ body {
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 
 :root { --primary-rgb: 59, 130, 246; }
+
+/* ── Dark mode: chat input border override ── */
+:root.dark .chat-input-box {
+  border-color: #27272a !important;
+}
+:root.dark .chat-input-box:focus-within {
+  border-color: #3f3f46 !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.04) !important;
+}
+
+/* ── Dark mode: Go Pro button ── */
+:root.dark .go-pro-btn {
+  background: #ffffff !important;
+  color: #09090b !important;
+}
 
 /* Antigravity card glow */
 .ag-card {

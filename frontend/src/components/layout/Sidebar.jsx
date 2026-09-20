@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Search, X, Pencil, Check, Settings, User, SquarePen,
   Folder, PanelLeftClose, MessageCircle, Palette,
   LogOut, HelpCircle, MoreHorizontal, Pin, PinOff, FolderPlus, ChevronLeft,
-  ChevronRight, BookOpen, FileText, AppWindow, Sparkles, Moon, Sun,
+  ChevronRight, BookOpen, FileText, AppWindow, Sparkles, Moon, Sun, Calendar,
 } from 'lucide-react';
 import { SettingsContext } from '../../context/SettingsContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -115,9 +115,10 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
   const navItems = [
     { to: '/library', label: 'Library',   icon: BookOpen,   match: p => p === '/library' },
-    { to: '/explore', label: 'Documents', icon: FileText,   match: p => false },
-    { to: '/explore', label: 'Apps',      icon: AppWindow,  match: p => false, expand: true },
+    { to: '/documents', label: 'Documents', icon: FileText,   match: p => p === '/documents' },
+    { to: '/explore', label: 'Explore',   icon: AppWindow,  match: p => p === '/explore' },
     { to: '/projects', label: 'Projects',  icon: Folder,    match: p => p === '/projects' },
+    { to: '/scheduled', label: 'Scheduled Tasks', icon: Calendar, match: p => p === '/scheduled' },
   ];
 
   const profileMenuItems = [
@@ -376,8 +377,8 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
           x: isMobileOpen || window.innerWidth >= 768 ? 0 : -300,
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="fixed md:static inset-y-0 left-0 z-50 flex flex-col shrink-0 overflow-hidden"
-        style={{ background: sb.bg, boxShadow: '2px 0 8px rgba(0,0,0,0.06)', borderRight: '1px solid #e5e7eb' }}
+        className="sidebar-root fixed md:static inset-y-0 left-0 z-50 flex flex-col shrink-0 overflow-hidden"
+        style={{ background: sb.bg, boxShadow: '2px 0 8px rgba(0,0,0,0.06)', borderRight: `1px solid ${sb.border}` }}
       >
         {/* Top accent glow */}
         <div className="absolute top-0 left-0 right-0 h-28 pointer-events-none" style={{ background: 'var(--sb-top-glow)' }} />
@@ -504,12 +505,12 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 }}
                 aria-label="Start new chat"
                 className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-[13px] font-semibold transition-all duration-200"
-                style={{ background: '#F3F4F6' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#E9EAEC'; e.currentTarget.style.paddingLeft = '14px'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.paddingLeft = '12px'; }}
+                style={{ background: 'transparent' }}
+                onMouseEnter={e => { if (location.pathname !== '/chat' || currentSessionId) { e.currentTarget.style.background = 'var(--sb-hover)'; e.currentTarget.style.paddingLeft = '14px'; } }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.paddingLeft = '12px'; }}
               >
-                <SquarePen size={16} aria-hidden="true" style={{ color: '#374151', flexShrink: 0 }} />
-                <span style={{ color: '#111827' }}>New Chat</span>
+                <SquarePen size={16} aria-hidden="true" style={{ color: 'var(--sb-text-muted)', flexShrink: 0 }} />
+                <span style={{ color: 'var(--sb-text-muted)' }}>New Chat</span>
                 <span className="ml-auto text-[10px] font-normal opacity-40" style={{ color: sb.textMuted }}>Ctrl+O</span>
               </button>
             </div>
@@ -518,7 +519,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
             <nav aria-label="App navigation" className="px-3 pb-1 shrink-0 flex flex-col gap-0.5">
               {navItems.map(({ to, label, icon: Icon, match, expand }, i) => {
                 const isActive = match(location.pathname);
-                const itemColor = isActive ? sb.text : 'var(--accent-dark)';
+                const itemColor = isActive ? sb.text : 'var(--sb-text-muted)';
                 return (
                   <Link
                     key={label}
@@ -529,11 +530,11 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                     style={{
                       color: itemColor,
                       fontWeight: isActive ? 600 : 500,
-                      background: isActive ? '#ECEDF0' : 'transparent',
+                      background: isActive ? 'var(--sb-active-bg)' : 'transparent',
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={e => {
-                      if (!isActive) { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.paddingLeft = '14px'; }
+                      if (!isActive) { e.currentTarget.style.background = 'var(--sb-hover)'; e.currentTarget.style.paddingLeft = '14px'; }
                       e.currentTarget.querySelector('.sb-icon')?.style && (e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1.1)');
                     }}
                     onMouseLeave={e => {
@@ -552,11 +553,11 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
               <button
                 onClick={() => setIsSearchModalOpen(true)}
                 className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium"
-                style={{ color: 'var(--accent-dark)', transition: 'all 0.2s ease' }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.paddingLeft = '14px'; e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1.1)'; }}
+                style={{ color: 'var(--sb-text-muted)', transition: 'all 0.2s ease' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--sb-hover)'; e.currentTarget.style.paddingLeft = '14px'; e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1.1)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.paddingLeft = '12px'; e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1)'; }}
               >
-                <Search size={16} aria-hidden="true" className="sb-icon shrink-0" style={{ color: 'var(--accent-dark)', transition: 'transform 0.2s ease' }} />
+                <Search size={16} aria-hidden="true" className="sb-icon shrink-0" style={{ color: 'var(--sb-text-muted)', transition: 'transform 0.2s ease' }} />
                 <span>Search Chat</span>
               </button>
             </nav>

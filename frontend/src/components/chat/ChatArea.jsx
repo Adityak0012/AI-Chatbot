@@ -23,7 +23,7 @@ export const ChatArea = () => {
         setTimeout(() => sendMessage(initialMsg), 300);
       }
     }
-  }, [location.state, currentSessionId, loadSession, handleNewChat, navigate, location.pathname]);
+  }, [location.state?.sessionId, location.state?.newChat, location.state?.initialMessage, currentSessionId]);
 
   const containerRef = useRef(null);
   const userScrolledUp = useRef(false);

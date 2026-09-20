@@ -71,38 +71,44 @@ const ScheduledTasks = () => {
   return (
     <>
       <div className="flex flex-col h-full w-full bg-[var(--bg)] text-[var(--text)]">
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-20 md:pt-24">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-8 pt-6 pb-8">
           <div className="max-w-6xl mx-auto space-y-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[var(--text)] flex items-center gap-2">
-                  <Clock size={24} className="text-[var(--primary)]" />
-                  Scheduled Tasks
-                </h1>
-                <p className="text-[var(--text-secondary)] mt-1">Manage automated prompts and recurring AI tasks.</p>
+                <h1 className="text-lg font-bold tracking-tight mb-1" style={{ color: 'var(--text)' }}>Scheduled Tasks</h1>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Manage automated prompts and recurring AI tasks.</p>
               </div>
-              
+
               <div className="flex items-center gap-3">
-                <div className="flex items-center bg-[var(--surface-2)] rounded-lg p-1">
+                <div className="flex items-center gap-1">
                   {['all', 'active', 'paused'].map(f => (
                     <button
                       key={f}
                       onClick={() => setFilter(f)}
-                      className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${filter === f ? 'bg-[var(--surface)] text-[var(--text)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text)]'}`}
+                      className="px-3 py-1 rounded-full text-sm font-medium transition-all duration-150"
+                      style={{
+                        background: filter === f ? 'var(--text)' : 'transparent',
+                        color: filter === f ? 'var(--bg)' : 'var(--text-secondary)',
+                      }}
+                      onMouseEnter={e => { if (filter !== f) { e.currentTarget.style.background = 'var(--hover)'; e.currentTarget.style.color = 'var(--text)'; } }}
+                      onMouseLeave={e => { if (filter !== f) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
                     >
                       {f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
                   ))}
                 </div>
-                
+
                 <button
                   onClick={() => {
                     setEditingTask(null);
                     setIsModalOpen(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--primary)] text-white rounded-lg font-medium hover:bg-opacity-90 transition-all active:scale-95 shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all active:scale-95"
+                  style={{ background: 'var(--text)', color: 'var(--bg)' }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                 >
-                  <Plus size={18} />
+                  <Plus size={16} />
                   Create Task
                 </button>
               </div>
@@ -110,11 +116,11 @@ const ScheduledTasks = () => {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--border)]"></div>
               </div>
             ) : filteredTasks.length === 0 ? (
               <div className="text-center py-20 bg-[var(--surface)] rounded-2xl border border-[var(--border)] border-dashed">
-                <Clock size={48} className="mx-auto text-[var(--text-secondary)] mb-4 opacity-50" />
+                <Clock size={48} className="mx-auto mb-4 opacity-40" style={{ color: 'var(--text-secondary)' }} />
                 <h3 className="text-lg font-semibold text-[var(--text)] mb-2">No scheduled tasks found</h3>
                 <p className="text-[var(--text-secondary)] max-w-sm mx-auto mb-6">
                   {filter === 'all' ? "Automate your workflow by creating recurring prompts that run on a schedule." : `You don't have any ${filter} tasks right now.`}
@@ -125,7 +131,10 @@ const ScheduledTasks = () => {
                       setEditingTask(null);
                       setIsModalOpen(true);
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--surface-2)] text-[var(--text)] rounded-lg font-medium hover:bg-[var(--hover)] transition-all"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all"
+                    style={{ background: 'var(--text)', color: 'var(--bg)' }}
+                    onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+                    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                   >
                     <Plus size={18} />
                     Create your first task

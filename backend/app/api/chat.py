@@ -178,6 +178,8 @@ def chat_with_ai(
         ai_prompt = "[User personalization settings — follow these unless they conflict with safety]\n" + "\n".join(personalization_parts) + "\n\n" + ai_prompt
 
     print(f"DEBUG: Final ai_prompt length sent to Ollama: {len(ai_prompt)} characters", flush=True)
+    print(f"DEBUG chat.py: uploaded_image_urls={uploaded_image_urls}", flush=True)
+    print(f"DEBUG chat.py: files received={len(files) if files else 0}", flush=True)
     images_to_send = list(uploaded_image_urls)
 
     # Build conversation history

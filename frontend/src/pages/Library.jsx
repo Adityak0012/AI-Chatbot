@@ -1,5 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
-import { Upload, Search, ChevronDown, Filter, LayoutGrid, List, Download, Trash2, X, CheckCircle } from 'lucide-react';
+import { Upload, Search, Plus, Filter, LayoutGrid, List, Download, Trash2, X, CheckCircle } from 'lucide-react';
 import { useChat } from '../context/ChatContext';
 import { LibraryFileRow } from '../components/library/LibraryFileRow';
 import { LibraryFileCard } from '../components/library/LibraryFileCard';
@@ -107,30 +107,33 @@ const Library = () => {
       />
 
       {/* Header Section */}
-      <div className="px-6 md:px-8 pt-20 md:pt-24 pb-4 shrink-0">
+      <div className="px-6 md:px-8 pt-6 pb-4 shrink-0">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text)] mb-1">Library</h1>
+            <h1 className="text-lg font-bold tracking-tight text-[var(--text)] mb-1">Library</h1>
           </div>
-          
+
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none" />
+            <div className="relative flex-1 sm:w-52">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] transition-colors"
+                className="w-full pl-9 pr-3 py-1.5 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl text-sm text-[var(--text)] focus:outline-none focus:border-[var(--border)] transition-colors"
               />
             </div>
-            
+
             <button
               onClick={handleUploadClick}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-[var(--primary)] hover:opacity-90 text-white rounded-xl transition-all font-medium shadow-sm shrink-0 h-[38px]"
+              className="flex items-center justify-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shrink-0"
+              style={{ background: '#111827', transition: 'all 0.2s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#374151'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#111827'; }}
             >
+              <Plus size={16} />
               <span>New</span>
-              <ChevronDown size={16} className="opacity-80 ml-1" />
             </button>
           </div>
         </div>

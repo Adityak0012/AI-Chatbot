@@ -110,7 +110,7 @@ export const MainLayout = ({ children }) => {
 
             {/* Go Pro */}
             <button
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors"
+              className="go-pro-btn hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors"
               style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)', color: '#fff' }}
             >
               <Gem size={14} aria-hidden="true" />

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { playNotificationSound, showDesktopNotification, flashTabTitle } from '../utils/notify';
@@ -82,12 +82,13 @@ export const ChatProvider = ({ children }) => {
     } catch (err) {
       console.error('Failed to fetch initial data:', err);
       if (err.response?.status === 401) {
-        handleLogout();
+        localStorage.removeItem('access_token');
+        navigate('/login');
       }
     } finally {
       setIsLoading(false);
     }
-  }, [handleLogout]);
+  }, [navigate]);
 
   const updateUserProfile = useCallback(async (updates) => {
     const res = await api.patch('/users/me', updates);
@@ -105,12 +106,16 @@ export const ChatProvider = ({ children }) => {
     return res.data;
   }, []);
 
+  const initialFetchDone = useRef(false);
+
   useEffect(() => {
+    if (initialFetchDone.current) return;
     const token = localStorage.getItem('access_token');
     if (token) {
+      initialFetchDone.current = true;
       fetchInitialData();
     }
-  }, [fetchInitialData]);
+  }, []);
 
   const loadSession = async (sessionId) => {
     try {
@@ -210,7 +215,7 @@ export const ChatProvider = ({ children }) => {
       }
     }
 
-    const userMsg = { role: 'user', content: displayContent };
+    const userMsg = { role: 'user', content: displayContent, _attachmentFiles: attachments ? [...attachments] : [] };
     setMessages(prev => [...prev, userMsg]);
     setIsSending(true);
 
@@ -325,6 +330,19 @@ export const ChatProvider = ({ children }) => {
         setCurrentSessionId(newSessionId);
         const historyRes = await api.get('/chat/history');
         setSessions(historyRes.data);
+        // Replace blob URLs with server URLs in user message
+        const sessionRes = await api.get(`/chat/history/${newSessionId}`);
+        if (sessionRes.data.messages?.length > 0) {
+          const lastUserMsg = sessionRes.data.messages.find(m => m.role === 'user');
+          if (lastUserMsg) {
+            setMessages(prev => {
+              const updated = [...prev];
+              const userMsgIdx = updated.findIndex(m => m.role === 'user' && m.content.includes('blob:'));
+              if (userMsgIdx !== -1) updated[userMsgIdx] = { role: 'user', content: lastUserMsg.content };
+              return updated;
+            });
+          }
+        }
       } else {
         setSessions(prev => {
           const updated = [...prev];

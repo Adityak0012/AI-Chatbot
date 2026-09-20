@@ -8,6 +8,7 @@ import AuthCallback from '../pages/AuthCallback';
 import Chat from '../pages/Chat';
 import Projects from '../pages/Projects';
 import Library from '../pages/Library';
+import Documents from '../pages/Documents';
 import ScheduledTasks from '../pages/ScheduledTasks';
 import Explore from '../pages/Explore';
 import { ProjectWorkspace } from '../components/projects/ProjectWorkspace';
@@ -29,6 +30,7 @@ const AppRoutes = () => {
         <Route path="/projects" element={<Projects />} />
         <Route path="/projects/:projectId" element={<ProjectWorkspace />} />
         <Route path="/library" element={<Library />} />
+        <Route path="/documents" element={<Documents />} />
         <Route path="/scheduled" element={<ScheduledTasks />} />
         <Route path="/explore" element={<Explore />} />
       </Route>
