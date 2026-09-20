@@ -92,7 +92,7 @@ export const MainLayout = ({ children }) => {
       <main className="flex-1 flex flex-col h-full min-w-0 bg-[var(--bg)] relative z-10 transition-colors duration-300">
 
         {/* ── Header Bar ── */}
-        <header className="shrink-0 flex items-center justify-between px-4 py-0 bg-[var(--header-bg)] border-b border-[var(--border)] z-20 h-[52px]">
+        <header className="shrink-0 flex items-center justify-between px-4 py-0 bg-[var(--header-bg)] z-20 h-[52px]">
 
           {/* LEFT — mobile hamburger only */}
           <div className="flex items-center gap-2">

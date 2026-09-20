@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     AI_PROVIDER: str = "ollama"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "qwen2.5-coder:3b"
+    GEMINI_API_KEY: str = ""
     TAVILY_API_KEY: str = ""
 
     SMTP_HOST: str = "smtp.gmail.com"

@@ -178,6 +178,7 @@ def chat_with_ai(
         ai_prompt = "[User personalization settings — follow these unless they conflict with safety]\n" + "\n".join(personalization_parts) + "\n\n" + ai_prompt
 
     print(f"DEBUG: Final ai_prompt length sent to Ollama: {len(ai_prompt)} characters", flush=True)
+    images_to_send = list(uploaded_image_urls)
 
     # Build conversation history
     previous_messages = db.query(ChatMessage).filter(
@@ -193,7 +194,7 @@ def chat_with_ai(
         def stream_generator():
             full_response = ""
             try:
-                for chunk in generate_ai_stream(ai_prompt, images=uploaded_image_urls, model=model, history=conversation_history):
+                for chunk in generate_ai_stream(ai_prompt, images=images_to_send, model=model, history=conversation_history):
                     chunk = re.sub(r"<think>.*?</think>", "", chunk, flags=re.DOTALL)
                     if chunk:
                         full_response += chunk

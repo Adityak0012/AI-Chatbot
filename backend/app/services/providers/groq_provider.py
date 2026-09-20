@@ -7,7 +7,8 @@ from app.core.config import settings
 
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ".env"))
+    load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"))
+    load_dotenv(".env")
 except ImportError:
     pass
 
@@ -49,18 +50,22 @@ class GroqProvider(BaseAIProvider):
             "Content-Type": "application/json"
         }
 
-        selected_model = model or "openai/gpt-oss-120b"
+        selected_model = model or "llama-3.3-70b-versatile"
 
         messages = []
         if history:
             for msg in history[:-1]:
+                import re
+                content_val = re.sub(r'!\[.*?\]\(.*?\)', '', str(msg["content"])).strip()
+                if not content_val:
+                    continue
                 messages.append({
                     "role": "user" if msg["role"] == "user" else "assistant",
-                    "content": msg["content"]
+                    "content": content_val
                 })
 
         if images and len(images) > 0:
-            selected_model = "qwen/qwen3.6-27b"
+            selected_model = "meta-llama/llama-4-scout-17b-16e-instruct"
 
             content = [{"type": "text", "text": prompt}]
             for img in images:
@@ -68,9 +73,7 @@ class GroqProvider(BaseAIProvider):
                 if b64_url:
                     content.append({
                         "type": "image_url",
-                        "image_url": {
-                            "url": b64_url
-                        }
+                        "image_url": {"url": b64_url}
                     })
             messages.append({"role": "user", "content": content})
         else:
@@ -138,16 +141,33 @@ class GroqProvider(BaseAIProvider):
             "Content-Type": "application/json"
         }
 
-        selected_model = model or "openai/gpt-oss-120b"
+        selected_model = model or "llama-3.3-70b-versatile"
 
         messages = []
         if history:
             for msg in history[:-1]:
+                import re
+                content_val = re.sub(r'!\[.*?\]\(.*?\)', '', str(msg["content"])).strip()
+                if not content_val:
+                    continue
                 messages.append({
                     "role": "user" if msg["role"] == "user" else "assistant",
-                    "content": msg["content"]
+                    "content": content_val
                 })
-        messages.append({"role": "user", "content": prompt})
+
+        if images and len(images) > 0:
+            selected_model = "meta-llama/llama-4-scout-17b-16e-instruct"
+            content = [{"type": "text", "text": prompt}]
+            for img in images:
+                b64_url = self._get_image_base64_url(img)
+                if b64_url:
+                    content.append({
+                        "type": "image_url",
+                        "image_url": {"url": b64_url}
+                    })
+            messages.append({"role": "user", "content": content})
+        else:
+            messages.append({"role": "user", "content": prompt})
 
         payload = {
             "model": selected_model,

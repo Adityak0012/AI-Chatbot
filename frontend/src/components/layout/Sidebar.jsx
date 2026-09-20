@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Search, X, Pencil, Check, Settings, User, SquarePen,
   Folder, PanelLeftClose, MessageCircle, Palette,
   LogOut, HelpCircle, MoreHorizontal, Pin, PinOff, FolderPlus, ChevronLeft,
-  ChevronRight, Image, FileText, AppWindow, Sparkles, Moon, Sun, LayoutGrid,
+  ChevronRight, BookOpen, FileText, AppWindow, Sparkles, Moon, Sun,
 } from 'lucide-react';
 import { SettingsContext } from '../../context/SettingsContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -114,7 +114,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   const groups = groupSessionsByDate(unpinnedSessionsList);
 
   const navItems = [
-    { to: '/explore', label: 'Images',    icon: Image,      match: p => false },
+    { to: '/library', label: 'Library',   icon: BookOpen,   match: p => p === '/library' },
     { to: '/explore', label: 'Documents', icon: FileText,   match: p => false },
     { to: '/explore', label: 'Apps',      icon: AppWindow,  match: p => false, expand: true },
     { to: '/projects', label: 'Projects',  icon: Folder,    match: p => p === '/projects' },
@@ -377,7 +377,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="fixed md:static inset-y-0 left-0 z-50 flex flex-col shrink-0 overflow-hidden"
-        style={{ background: sb.bg, boxShadow: 'var(--sb-side-shadow)' }}
+        style={{ background: sb.bg, boxShadow: '2px 0 8px rgba(0,0,0,0.06)', borderRight: '1px solid #e5e7eb' }}
       >
         {/* Top accent glow */}
         <div className="absolute top-0 left-0 right-0 h-28 pointer-events-none" style={{ background: 'var(--sb-top-glow)' }} />
@@ -454,10 +454,10 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
             {/* Header */}
             <div className="flex items-center justify-between px-3.5 pt-4 pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: sb.gradient }}>
-                  <Sparkles size={15} aria-hidden="true" className="text-white" />
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b82f6 100%)' }}>
+                  <Sparkles size={16} aria-hidden="true" className="text-white" />
                 </div>
-                <span className="font-semibold text-[14px]" style={{ color: sb.text }}>Chatbot App</span>
+                <span className="font-bold text-[14px] tracking-tight" style={{ color: sb.text }}>Chatbot App</span>
               </div>
               <div className="flex items-center gap-0.5">
                 {/* Theme toggle */}
@@ -470,16 +470,6 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   {theme === 'dark' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
-                </button>
-                {/* Layout toggle */}
-                <button
-                  aria-label="Toggle layout"
-                  className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
-                  style={{ color: sb.textMuted }}
-                  onMouseEnter={e => e.currentTarget.style.background = sb.hover}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <LayoutGrid size={15} aria-hidden="true" />
                 </button>
                 {/* Collapse (desktop) */}
                 <button
@@ -513,13 +503,13 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                   if (window.innerWidth < 768) setIsMobileOpen(false);
                 }}
                 aria-label="Start new chat"
-                className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors"
-                style={{ background: sb.activeBg }}
-                onMouseEnter={e => { e.currentTarget.style.background = sb.hover; }}
-                onMouseLeave={e => { e.currentTarget.style.background = sb.activeBg; }}
+                className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-[13px] font-semibold transition-all duration-200"
+                style={{ background: '#F3F4F6' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#E9EAEC'; e.currentTarget.style.paddingLeft = '14px'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.paddingLeft = '12px'; }}
               >
-                <SquarePen size={15} aria-hidden="true" style={{ color: sb.textMuted }} />
-                <span style={{ color: sb.text }}>New Chat</span>
+                <SquarePen size={16} aria-hidden="true" style={{ color: '#374151', flexShrink: 0 }} />
+                <span style={{ color: '#111827' }}>New Chat</span>
                 <span className="ml-auto text-[10px] font-normal opacity-40" style={{ color: sb.textMuted }}>Ctrl+O</span>
               </button>
             </div>
@@ -535,15 +525,23 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                     to={to}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => window.innerWidth < 768 && setIsMobileOpen(false)}
-                    className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors relative"
-                    style={{ color: itemColor }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = sb.hover; }}
-                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                    className="sb-nav-item w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] relative"
+                    style={{
+                      color: itemColor,
+                      fontWeight: isActive ? 600 : 500,
+                      background: isActive ? '#ECEDF0' : 'transparent',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={e => {
+                      if (!isActive) { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.paddingLeft = '14px'; }
+                      e.currentTarget.querySelector('.sb-icon')?.style && (e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1.1)');
+                    }}
+                    onMouseLeave={e => {
+                      if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.paddingLeft = '12px'; }
+                      e.currentTarget.querySelector('.sb-icon')?.style && (e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1)');
+                    }}
                   >
-                    {isActive && (
-                      <div className="absolute inset-0 rounded-xl" style={{ background: sb.activeBg }} />
-                    )}
-                    <Icon size={15} aria-hidden="true" className="shrink-0 relative z-10" style={{ color: itemColor }} />
+                    <Icon size={16} aria-hidden="true" className="sb-icon shrink-0 relative z-10" style={{ color: itemColor, transition: 'transform 0.2s ease' }} />
                     <span className="relative z-10 flex-1">{label}</span>
                     {expand && <ChevronRight size={13} className="relative z-10 shrink-0" style={{ color: sb.textDim }} />}
                   </Link>
@@ -553,12 +551,12 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
               {/* Search Chat — triggers modal */}
               <button
                 onClick={() => setIsSearchModalOpen(true)}
-                className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors"
-                style={{ color: sb.textMuted }}
-                onMouseEnter={e => e.currentTarget.style.background = sb.hover}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium"
+                style={{ color: 'var(--accent-dark)', transition: 'all 0.2s ease' }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#F3F4F6'; e.currentTarget.style.paddingLeft = '14px'; e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.paddingLeft = '12px'; e.currentTarget.querySelector('.sb-icon').style.transform = 'scale(1)'; }}
               >
-                <Search size={15} aria-hidden="true" style={{ color: sb.textMuted }} />
+                <Search size={16} aria-hidden="true" className="sb-icon shrink-0" style={{ color: 'var(--accent-dark)', transition: 'transform 0.2s ease' }} />
                 <span>Search Chat</span>
               </button>
             </nav>

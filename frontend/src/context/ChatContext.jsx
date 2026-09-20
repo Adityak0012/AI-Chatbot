@@ -181,11 +181,11 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = useCallback(() => {
     setMessages([]);
     setCurrentSessionId(null);
     setError('');
-  };
+  }, []);
 
   const sendMessage = async (content, attachments = [], effort = 'medium', model = null, projectId = null, skill = null, webSearch = false) => {
     if ((!content.trim() && attachments.length === 0) || isSending) return;
@@ -216,14 +216,14 @@ export const ChatProvider = ({ children }) => {
 
     try {
       const formData = new FormData();
-      formData.append('prompt', content.trim());
+      formData.append('prompt', content.trim() || ' ');
       formData.append('effort', effort);
-      formData.append('stream', 'true');
+      formData.append('stream', '1');
       if (model) formData.append('model', model);
       if (currentSessionId) formData.append('session_id', currentSessionId);
       if (projectId) formData.append('project_id', projectId);
       if (skill) formData.append('skill', skill);
-      formData.append('web_search', webSearch);
+      formData.append('web_search', webSearch ? '1' : '0');
       if (attachments && attachments.length > 0) {
         attachments.forEach(file => formData.append('files', file));
       }
@@ -239,7 +239,10 @@ export const ChatProvider = ({ children }) => {
       if (!response.ok) {
         if (response.status === 401) { handleLogout('session_expired'); return; }
         const errData = await response.json().catch(() => ({}));
-        const errMsg = errData.detail || 'Failed to get a response.';
+        const detail = errData.detail;
+        const errMsg = Array.isArray(detail)
+          ? (detail[0]?.msg || 'Failed to get a response.')
+          : (typeof detail === 'string' ? detail : 'Failed to get a response.');
         if (response.status === 429) {
           setErrorWithType(errMsg, 'rate_limit');
         } else if (response.status === 504) {

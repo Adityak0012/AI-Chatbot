@@ -148,6 +148,7 @@ export const MessageBubble = ({ message, isTyping, index }) => {
       const fullSrc = src?.startsWith('/')
         ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${src}`
         : src;
+      if (!fullSrc) return null;
       return <img {...props} src={fullSrc} className="max-w-full md:max-w-md rounded-xl shadow-md my-4 border border-[var(--border)]" alt={props.alt || 'Attached Image'} loading="lazy" />;
     },
     a({node, href, children, ...props}) {
