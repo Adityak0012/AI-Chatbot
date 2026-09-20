@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { WifiOff, Clock, AlertTriangle, RefreshCw, Zap, BookOpen, Leaf, FlaskConical } from 'lucide-react';
+import { WifiOff, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageBubble } from './MessageBubble';
@@ -56,15 +56,16 @@ export const ChatArea = () => {
           /* ── Empty state: greeting + composer grouped and centered ── */
           <div className="h-full flex flex-col items-center justify-center px-4">
             <h2 style={{
-              fontSize: '2rem',
-              fontWeight: 600,
-              letterSpacing: '-0.025em',
+              fontSize: '2.5rem',
+              letterSpacing: '-0.02em',
               color: 'var(--text)',
-              lineHeight: 1.2,
-              marginBottom: '1.75rem',
+              lineHeight: 1.15,
+              marginBottom: '1.5rem',
               textAlign: 'center',
+              fontWeight: 400,
             }}>
-              Good to see you.
+              <span style={{ fontWeight: 300 }}>Good to </span>
+              <span style={{ fontWeight: 700 }}>see you.</span>
             </h2>
             <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
           </div>

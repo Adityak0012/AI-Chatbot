@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Sidebar } from './Sidebar';
-import { Menu, Plus, ChevronDown, Download, FileText, FileDown, Share2, Check, Search } from 'lucide-react';
+import { Menu, Plus, ChevronDown, Download, FileText, FileDown, Share2, Check, Search, Gem, Bell } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useChat } from '../../context/ChatContext';
 import { SearchModal } from '../ui/SearchModal';
+import { SettingsContext } from '../../context/SettingsContext';
 import api from '../../services/api';
 
 export const MainLayout = ({ children }) => {
@@ -15,6 +16,7 @@ export const MainLayout = ({ children }) => {
   const [isSearchOpen, setIsSearchOpen]               = useState(false);
 
   const { handleNewChat, messages, sessions, currentSessionId, userProfile } = useChat();
+  const { theme, setTheme } = useContext(SettingsContext);
 
   const currentSession = sessions?.find(s => s.id === currentSessionId);
   const chatTitle      = currentSession?.title || 'Chat Export';
@@ -92,7 +94,7 @@ export const MainLayout = ({ children }) => {
         {/* ── Header Bar ── */}
         <header className="shrink-0 flex items-center justify-between px-4 py-0 bg-[var(--header-bg)] border-b border-[var(--border)] z-20 h-[52px]">
 
-          {/* LEFT */}
+          {/* LEFT — mobile hamburger only */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
@@ -101,90 +103,27 @@ export const MainLayout = ({ children }) => {
             >
               <Menu size={20} aria-hidden="true" />
             </button>
-
-            {isChatPage && currentSession && (
-              <span className="hidden md:block text-[14px] font-semibold text-[var(--text)] truncate max-w-[240px]" title={chatTitle}>
-                {chatTitle}
-              </span>
-            )}
-
-            {isChatPage && !currentSession && (
-              <span className="hidden md:block text-[14px] font-semibold text-[var(--text-secondary)]">
-                New Chat
-              </span>
-            )}
           </div>
 
-          {/* RIGHT */}
-          <div className="flex items-center gap-1.5">
+          {/* RIGHT — Go Pro + Bell */}
+          <div className="flex items-center gap-2">
 
-            {/* Search */}
-            {isChatPage && (
-              <button
-                onClick={() => setIsSearchOpen(true)}
-                aria-label="Search conversations"
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-[var(--placeholder)] text-[13px] cursor-pointer hover:border-[var(--primary)] transition-all w-[200px]"
-              >
-                <Search size={13} aria-hidden="true" />
-                <span>Search conversations…</span>
-              </button>
-            )}
-
-            {/* Share */}
-            {isChatPage && messages.length > 0 && (
-              <>
-                <button
-                  onClick={shareChat}
-                  aria-label="Share chat"
-                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)] hover:border-[var(--primary)] text-xs font-medium transition-all"
-                >
-                  {shareCopied
-                    ? <><Check size={13} aria-hidden="true" className="text-green-500" /><span className="text-green-500">Copied</span></>
-                    : <><Share2 size={13} aria-hidden="true" />Share</>
-                  }
-                </button>
-
-                {/* Export */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowExportMenu(p => !p)}
-                    aria-label="Export chat"
-                    aria-expanded={showExportMenu}
-                    className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text)] hover:border-[var(--primary)] text-xs font-medium transition-all"
-                  >
-                    <Download size={13} aria-hidden="true" />Export
-                  </button>
-                  {showExportMenu && (
-                    <>
-                      <div className="fixed inset-0 z-30" onClick={() => setShowExportMenu(false)} />
-                      <div className="absolute right-0 top-10 z-40 w-48 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xl overflow-hidden">
-                        <div className="px-3 py-2 border-b border-[var(--border)]">
-                          <p className="text-xs text-[var(--text-secondary)] font-medium">Export chat as</p>
-                        </div>
-                        <button onClick={exportAsMarkdown} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors">
-                          <FileText size={15} aria-hidden="true" className="text-[var(--primary)]" />Markdown (.md)
-                        </button>
-                        <button onClick={exportAsPDF} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition-colors">
-                          <FileDown size={15} aria-hidden="true" className="text-[var(--primary)]" />PDF (.html → print)
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* Avatar */}
-            <div
-              aria-hidden="true"
-              className="h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow cursor-pointer select-none overflow-hidden shrink-0"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)' }}
+            {/* Go Pro */}
+            <button
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)', color: '#fff' }}
             >
-              {avatarSrc
-                ? <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
-                : userInitial
-              }
-            </div>
+              <Gem size={14} aria-hidden="true" />
+              Go Pro
+            </button>
+
+            {/* Notification bell */}
+            <button
+              aria-label="Notifications"
+              className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--hover)] transition-colors"
+            >
+              <Bell size={16} aria-hidden="true" />
+            </button>
 
             {/* Mobile: new chat */}
             <button

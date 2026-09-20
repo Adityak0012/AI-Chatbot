@@ -130,29 +130,87 @@ export const MessageBubble = ({ message, isTyping, index }) => {
     lg: 'text-lg'
   };
 
+  /* ── Shared markdown renderer ── */
+  const markdownComponents = {
+    code({node, inline, className, children, ...props}) {
+      const match = /language-(\w+)/.exec(className || '');
+      const codeString = String(children).replace(/\n$/, '');
+      if (!inline && match) {
+        return <CodeBlock language={match[1]} code={codeString} {...props} />;
+      }
+      return (
+        <code className="bg-[var(--surface-2)] border border-[var(--border)] rounded px-1.5 py-0.5 font-mono text-sm text-[var(--text)] inline-block" {...props}>
+          {children}
+        </code>
+      );
+    },
+    img({node, src, ...props}) {
+      const fullSrc = src?.startsWith('/')
+        ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${src}`
+        : src;
+      return <img {...props} src={fullSrc} className="max-w-full md:max-w-md rounded-xl shadow-md my-4 border border-[var(--border)]" alt={props.alt || 'Attached Image'} loading="lazy" />;
+    },
+    a({node, href, children, ...props}) {
+      const isUpload = href?.includes('/static/uploads/');
+      const hasEmoji = typeof children === 'string' ? children.startsWith('📄 ') : Array.isArray(children) && typeof children[0] === 'string' && children[0].startsWith('📄 ');
+      if (isUpload || hasEmoji) {
+        const fullHref = href?.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${href}` : href;
+        let displayText = children;
+        if (typeof children === 'string') displayText = children.replace('📄 ', '');
+        else if (Array.isArray(children) && typeof children[0] === 'string') displayText = [children[0].replace('📄 ', ''), ...children.slice(1)];
+        return (
+          <a href={fullHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 my-2 bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border)] rounded-xl text-sm !text-[var(--text)] font-medium transition-colors no-underline shadow-sm w-fit" {...props}>
+            <FileText size={16} className="!text-[var(--primary)] flex-shrink-0" />
+            <span className="truncate max-w-[200px] sm:max-w-[300px]">{displayText}</span>
+          </a>
+        );
+      }
+      return <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline" {...props}>{children}</a>;
+    },
+  };
+
+  if (!isAi) {
+    /* ── User message: light gray pill, right-aligned ── */
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+        className="w-full flex justify-end py-1.5"
+      >
+        <div
+          className={cn("max-w-[75%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-[var(--text)] break-words", textSizes[fontSize] || "text-[15px]")}
+          style={{ background: '#F0F0F0' }}
+        >
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {message.content}
+          </ReactMarkdown>
+        </div>
+      </motion.div>
+    );
+  }
+
+  /* ── AI message: bot icon left + plain prose, no bubble ── */
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: 'easeOut' }}
-      className={cn(
-        "group w-full flex py-2 md:py-2.5",
-        isAi ? "justify-start" : "justify-end"
-      )}
+      className="group w-full flex items-start gap-3 py-2 md:py-2.5"
     >
-      <div className={cn(
-        "max-w-[82%] md:max-w-[75%] min-w-0 flex flex-col",
-        textSizes[fontSize] || "text-base",
-        isAi ? "items-start" : "items-end"
-      )}>
+      {/* Bot icon */}
+      <div className="shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: '#000' }}>
+        <Bot size={14} aria-hidden="true" className="text-white" />
+      </div>
 
-        
+      {/* Content */}
+      <div className={cn("flex-1 min-w-0 flex flex-col", textSizes[fontSize] || "text-[15px]")}>
         {isTyping ? (
           <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22 }}
-            className="bg-[var(--surface-2)] border border-[var(--border)] px-5 py-4 flex gap-1.5 items-center rounded-2xl rounded-tl-sm"
+            className="flex gap-1.5 items-center py-2"
             aria-label="AI is typing"
             role="status"
           >
@@ -160,127 +218,45 @@ export const MessageBubble = ({ message, isTyping, index }) => {
               <motion.span
                 key={i}
                 aria-hidden="true"
-                className="block w-2 h-2 rounded-full bg-[var(--primary)]"
+                className="block w-2 h-2 rounded-full bg-[var(--text-secondary)]"
                 animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
                 transition={{ repeat: Infinity, duration: 0.75, delay, ease: 'easeInOut' }}
               />
             ))}
           </motion.div>
         ) : (
-          <div
-            className={cn(
-              "max-w-none break-words",
-              isAi
-                ? "bg-[var(--surface-2)] border border-[var(--border)] rounded-2xl rounded-tl-sm px-4 py-3 prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-[var(--border)] prose-table:text-[var(--text)] prose-thead:text-[var(--text)] prose-th:text-[var(--text)] prose-tr:text-[var(--text)] prose-tr:border-[var(--border)] prose-td:text-[var(--text)]"
-                : "bg-[var(--primary)] text-white rounded-2xl rounded-tr-sm px-4 py-2.5 mt-1 shadow-sm prose prose-headings:text-white prose-p:text-white prose-strong:text-white prose-a:text-white hover:prose-a:text-blue-100 prose-code:text-white/90 prose-ul:text-white prose-ol:text-white prose-li:text-white prose-blockquote:text-white/80 prose-blockquote:border-white/30 prose-table:text-white prose-thead:text-white prose-th:text-white prose-tr:text-white prose-td:text-white"
-            )}
-          >
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              key={isStreaming ? message.content.length : 'done'}
-              components={{
-                code({node, inline, className, children, ...props}) {
-                  const match = /language-(\w+)/.exec(className || '')
-                  const codeString = String(children).replace(/\n$/, '');
+          <>
+            <div className="prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-l-0 prose-table:text-[var(--text)] prose-th:text-[var(--text)] prose-td:text-[var(--text)] max-w-none break-words text-[var(--text)]">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} key={isStreaming ? message.content.length : 'done'} components={markdownComponents}>
+                {message.content}
+              </ReactMarkdown>
+              {isStreaming && (
+                <motion.span
+                  className="inline-block w-[2px] h-[1em] bg-[var(--text)] ml-0.5 align-middle"
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
+                />
+              )}
+            </div>
 
-                  if (!inline && match) {
-                    return (
-                      <CodeBlock language={match[1]} code={codeString} {...props} />
-                    );
-                  }
-
-                  return (
-                    <code className="bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-0.5 font-mono text-sm text-[var(--text)] inline-block" {...props}>
-                      {children}
-                    </code>
-                  );
-                },
-                img({node, src, ...props}) {
-                  const fullSrc = src?.startsWith('/') 
-                    ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${src}`
-                    : src;
-                  return (
-                    <img 
-                      {...props} 
-                      src={fullSrc}
-                      className="max-w-full md:max-w-md rounded-xl shadow-md my-4 border border-[var(--border)]" 
-                      alt={props.alt || "Attached Image"} 
-                      loading="lazy"
-                    />
-                  )
-                },
-                a({node, href, children, ...props}) {
-                  const isUploadFile = href?.startsWith('/static/uploads/') || href?.includes('/static/uploads/');
-                  const isEmojiPrefixed = Array.isArray(children) ? typeof children[0] === 'string' && children[0].startsWith('📄 ') : typeof children === 'string' && children.startsWith('📄 ');
-                  
-                  if (isUploadFile || isEmojiPrefixed) {
-                    const fullHref = href?.startsWith('/') 
-                      ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${href}`
-                      : href;
-                      
-                    let displayText = children;
-                    if (typeof children === 'string' && children.startsWith('📄 ')) {
-                        displayText = children.replace('📄 ', '');
-                    } else if (Array.isArray(children) && typeof children[0] === 'string' && children[0].startsWith('📄 ')) {
-                        displayText = [children[0].replace('📄 ', ''), ...children.slice(1)];
-                    }
-
-                    return (
-                      <a 
-                        href={fullHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-2 my-2 bg-[var(--surface-2)] hover:bg-[var(--hover)] border border-[var(--border)] rounded-xl text-sm !text-[var(--text)] font-medium transition-colors no-underline shadow-sm w-fit"
-                        {...props}
-                      >
-                        <FileText size={16} className="!text-[var(--primary)] flex-shrink-0" />
-                        <span className="truncate max-w-[200px] sm:max-w-[300px]">{displayText}</span>
-                      </a>
-                    );
-                  }
-
-                  return (
-                    <a href={href} target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline" {...props}>
-                      {children}
-                    </a>
-                  );
-                }
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
-            {isStreaming && (
-              <motion.span
-                className="inline-block w-[2px] h-[1em] bg-[var(--primary)] ml-0.5 align-middle"
-                animate={{ opacity: [1, 0, 1] }}
-                transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
-              />
-            )}
-          </div>
-        )}
-
-        {isAi && !isTyping && (
-          <div className="flex items-center gap-0.5 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" role="toolbar" aria-label="Message actions">
-            <button onClick={handleCopy} aria-label={copied ? 'Copied' : 'Copy message'} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--hover)] transition-colors">
-              {copied ? <Check size={15} aria-hidden="true" className="text-green-500" /> : <Copy size={15} aria-hidden="true" />}
-            </button>
-            <button onClick={handleToggleSave} aria-label={isSaved ? 'Unsave message' : 'Save message'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', isSaved ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]')}>
-              <Bookmark size={15} aria-hidden="true" className={isSaved ? 'fill-current' : ''} />
-            </button>
-            <button onClick={handleShare} aria-label="Share response" className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--hover)] transition-colors">
-              <Share2 size={15} aria-hidden="true" />
-            </button>
-            <button onClick={handleRegenerate} aria-label="Regenerate response" className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--primary)] rounded-lg hover:bg-[var(--hover)] transition-colors">
-              <RefreshCw size={15} aria-hidden="true" />
-            </button>
-            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
-            <button onClick={handleLike} aria-label="Good response" aria-pressed={feedback === 'like'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', feedback === 'like' ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--primary)]')}>
-              <ThumbsUp size={15} aria-hidden="true" className={feedback === 'like' ? 'fill-current' : ''} />
-            </button>
-            <button onClick={handleDislike} aria-label="Bad response" aria-pressed={feedback === 'dislike'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', feedback === 'dislike' ? 'text-red-500' : 'text-[var(--text-secondary)] hover:text-red-500')}>
-              <ThumbsDown size={15} aria-hidden="true" className={feedback === 'dislike' ? 'fill-current' : ''} />
-            </button>
-          </div>
+            <div className="flex items-center gap-0.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150" role="toolbar" aria-label="Message actions">
+              <button onClick={handleCopy} aria-label={copied ? 'Copied' : 'Copy message'} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text)] rounded-lg hover:bg-[var(--hover)] transition-colors">
+                {copied ? <Check size={14} aria-hidden="true" className="text-green-500" /> : <Copy size={14} aria-hidden="true" />}
+              </button>
+              <button onClick={handleToggleSave} aria-label={isSaved ? 'Unsave' : 'Save'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', isSaved ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text)]')}>
+                <Bookmark size={14} aria-hidden="true" className={isSaved ? 'fill-current' : ''} />
+              </button>
+              <button onClick={handleRegenerate} aria-label="Regenerate response" className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text)] rounded-lg hover:bg-[var(--hover)] transition-colors">
+                <RefreshCw size={14} aria-hidden="true" />
+              </button>
+              <button onClick={handleLike} aria-label="Good response" aria-pressed={feedback === 'like'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', feedback === 'like' ? 'text-[var(--primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text)]')}>
+                <ThumbsUp size={14} aria-hidden="true" className={feedback === 'like' ? 'fill-current' : ''} />
+              </button>
+              <button onClick={handleDislike} aria-label="Bad response" aria-pressed={feedback === 'dislike'} className={cn('p-1.5 rounded-lg hover:bg-[var(--hover)] transition-colors', feedback === 'dislike' ? 'text-red-500' : 'text-[var(--text-secondary)] hover:text-red-500')}>
+                <ThumbsDown size={14} aria-hidden="true" className={feedback === 'dislike' ? 'fill-current' : ''} />
+              </button>
+            </div>
+          </>
         )}
       </div>
 
@@ -299,3 +275,4 @@ export const MessageBubble = ({ message, isTyping, index }) => {
     </motion.div>
   );
 };
+

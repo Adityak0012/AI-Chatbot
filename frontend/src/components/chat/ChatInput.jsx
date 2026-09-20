@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Send, Mic, Paperclip, Square, X, FileText, ChevronUp, ChevronRight, ChevronLeft, Check, Pencil, BookOpen, Image, AlignLeft, Plus as PlusIcon } from 'lucide-react';
+import { Send, Mic, Paperclip, Square, X, FileText, ChevronUp, ChevronRight, ChevronLeft, Check, Pencil, BookOpen, Image, AlignLeft, Plus as PlusIcon, Sparkles } from 'lucide-react';
 import { useAutoResizeTextArea } from '../../hooks/useAutoResizeTextArea';
 import { useSpeechToText } from '../../hooks/useSpeechToText';
 import { cn } from '../../utils/cn';
@@ -171,9 +171,9 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
     >
       <div className={cn(
         "relative flex flex-col bg-[var(--surface)] rounded-2xl border transition-all duration-200",
-        "shadow-[0_1px_4px_var(--shadow)] focus-within:shadow-[0_2px_12px_var(--shadow)]",
-        "focus-within:ring-2 focus-within:ring-[var(--ring)]",
-        isDragging ? "border-[var(--primary)] border-dashed border-2 bg-[var(--primary)]/5" : "border-[var(--border)]"
+        "shadow-[0_1px_4px_var(--shadow)] focus-within:shadow-[0_0_0_2px_rgba(0,0,0,0.08)]",
+        "focus-within:border-[#111111]",
+        isDragging ? "border-[var(--primary)] border-dashed border-2 bg-[var(--primary)]/5" : "border-[#e5e7eb]"
       )}>
         {fileError && (
           <div className="px-4 pt-2 pb-0">
@@ -236,8 +236,8 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition-colors"
                 title="Model & effort"
               >
-                <span className="hidden sm:inline">{currentModelOption.label}</span>
-                <span>{currentEffortOption.label}</span>
+                <Sparkles size={13} aria-hidden="true" />
+                <span>Auto</span>
                 <ChevronUp size={12} className={cn("transition-transform duration-150", isPickerOpen ? "rotate-180" : "rotate-0")} />
               </button>
 
@@ -319,21 +319,21 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
             )}
 
             {isSending ? (
-              <button className="p-2 bg-[var(--surface-2)] text-[var(--text-secondary)] rounded-xl" title="Stop generating">
-                <Square size={18} fill="currentColor" className="scale-75" />
+              <button className="p-2 bg-[var(--border)] text-[var(--text-secondary)] rounded-full" title="Stop generating">
+                <Square size={15} fill="currentColor" className="scale-75" />
               </button>
             ) : (
               <button
                 onClick={handleSend}
                 disabled={(!input.trim() && files.length === 0)}
-                className={cn("p-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95",
+                className={cn("p-2 rounded-full transition-all duration-200 hover:scale-105 active:scale-95",
                   (input.trim() || files.length > 0)
-                    ? "bg-[var(--text)] text-[var(--bg)] hover:opacity-80"
-                    : "bg-[var(--surface-2)] text-[var(--text-secondary)] opacity-40 cursor-not-allowed"
+                    ? "bg-[var(--border)] text-[var(--text)] hover:bg-[var(--text-secondary)] hover:text-[var(--bg)]"
+                    : "bg-[var(--surface-2)] text-[var(--placeholder)] opacity-50 cursor-not-allowed"
                 )}
                 title="Send message"
               >
-                <Send size={16} />
+                <Send size={15} />
               </button>
             )}
           </div>
@@ -348,10 +348,11 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
             { Icon: BookOpen,  label: 'Learn about',    prompt: 'Explain to me: ' },
             { Icon: Image,     label: 'Analyze image',  prompt: 'Analyze this image: ' },
             { Icon: AlignLeft, label: 'Summarize text', prompt: 'Summarize the following: ' },
+            { Icon: PlusIcon,  label: 'More',           prompt: null },
           ].map(({ Icon, label, prompt }) => (
             <button
               key={label}
-              onClick={() => { setInput(prompt); textAreaRef.current?.focus(); }}
+              onClick={() => { if (prompt) { setInput(prompt); textAreaRef.current?.focus(); } }}
               style={{
                 height: 34,
                 padding: '0 14px',
@@ -360,7 +361,7 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
                 fontWeight: 500,
                 border: '1px solid var(--border)',
                 background: 'transparent',
-                color: 'var(--text-secondary)',
+                color: 'var(--accent-dark)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -368,8 +369,8 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
                 transition: 'border-color 0.15s, color 0.15s',
                 whiteSpace: 'nowrap',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--text-secondary)'; e.currentTarget.style.color = 'var(--text)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-dark)'; e.currentTarget.style.color = 'var(--text)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--accent-dark)'; }}
             >
               <Icon size={13} aria-hidden="true" />
               {label}
@@ -383,8 +384,8 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
         const totalTokens = Math.ceil(totalChars / 4);
         const inputTokens = Math.ceil(input.length / 4);
         return (
-          <div className="text-center mt-3 text-xs text-[var(--text-secondary)] flex items-center justify-center gap-2 flex-wrap">
-            <span>AI Chatbot Pro can make mistakes. Verify important information.</span>
+          <div className="text-center mt-3 text-xs flex items-center justify-center gap-2 flex-wrap" style={{ color: 'var(--accent-dark)' }}>
+            <span>Chatbot App is AI and can make mistakes. Check important information.</span>
             <div className="flex items-center gap-1.5">
               {input.length > 0 && (
                 <span className="flex items-center gap-1 text-[10px] text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded-full border border-[var(--primary)]/20" style={{ fontVariantNumeric: 'tabular-nums' }}>

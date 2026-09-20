@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const SettingsContext = createContext();
+export const SettingsContext = createContext();
 
 export const useSettings = () => useContext(SettingsContext);
 
 export const SettingsProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [fontSize, setFontSize] = useState(() => localStorage.getItem('fontSize') || 'base');
   const [responseSpeed, setResponseSpeed] = useState(() => localStorage.getItem('responseSpeed') || 'normal');
   const [contrast, setContrast] = useState(() => localStorage.getItem('contrast') || 'system');

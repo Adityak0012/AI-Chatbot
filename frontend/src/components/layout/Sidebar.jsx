@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, Search, X, Pencil, Check, Settings, User, SquarePen,
-  Folder, LibraryBig, Clock, Bot, PanelLeftClose, MessageCircle, Palette,
+  Folder, PanelLeftClose, MessageCircle, Palette,
   LogOut, HelpCircle, MoreHorizontal, Pin, PinOff, FolderPlus, ChevronLeft,
-  Home, Compass
+  ChevronRight, Image, FileText, AppWindow, Sparkles, Moon, Sun, LayoutGrid,
 } from 'lucide-react';
+import { SettingsContext } from '../../context/SettingsContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useChat } from '../../context/ChatContext';
 import { cn } from '../../utils/cn';
@@ -36,6 +37,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     sessions, currentSessionId, loadSession, deleteSession, renameSession,
     handleNewChat, userProfile, handleLogout, projects
   } = useChat();
+  const { theme, setTheme } = useContext(SettingsContext);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -112,11 +114,10 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   const groups = groupSessionsByDate(unpinnedSessionsList);
 
   const navItems = [
-    { to: '/chat',      label: 'Home',      icon: Home,       match: p => p.startsWith('/chat') },
-    { to: '/library',   label: 'Library',   icon: LibraryBig, match: p => p === '/library' },
-    { to: '/projects',  label: 'Projects',  icon: Folder,     match: p => p === '/projects' },
-    { to: '/scheduled', label: 'Scheduled', icon: Clock,      match: p => p === '/scheduled' },
-    { to: '/explore',   label: 'Explore',   icon: Compass,    match: p => p === '/explore' },
+    { to: '/explore', label: 'Images',    icon: Image,      match: p => false },
+    { to: '/explore', label: 'Documents', icon: FileText,   match: p => false },
+    { to: '/explore', label: 'Apps',      icon: AppWindow,  match: p => false, expand: true },
+    { to: '/projects', label: 'Projects',  icon: Folder,    match: p => p === '/projects' },
   ];
 
   const profileMenuItems = [
@@ -132,8 +133,8 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   /* ── Reusable Avatar ── */
   const Avatar = ({ size = 32, className = '' }) => (
     <div
-      className={cn('rounded-full overflow-hidden shrink-0 flex items-center justify-center text-white font-bold shadow-lg', className)}
-      style={{ width: size, height: size, background: sb.gradient }}
+      className={cn('rounded-full overflow-hidden shrink-0 flex items-center justify-center text-white font-bold', className)}
+      style={{ width: size, height: size, background: 'var(--sb-avatar-gradient)' }}
     >
       {avatarSrc
         ? <img src={avatarSrc} alt={userProfile?.username || 'User'} className="w-full h-full object-cover" />
@@ -376,7 +377,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="fixed md:static inset-y-0 left-0 z-50 flex flex-col shrink-0 overflow-hidden"
-        style={{ background: sb.bg, borderRight: `1px solid ${sb.border}` }}
+        style={{ background: sb.bg, boxShadow: 'var(--sb-side-shadow)' }}
       >
         {/* Top accent glow */}
         <div className="absolute top-0 left-0 right-0 h-28 pointer-events-none" style={{ background: 'var(--sb-top-glow)' }} />
@@ -392,7 +393,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
               className="h-10 w-10 flex items-center justify-center rounded-xl mb-2"
               style={{ background: sb.gradient }}
             >
-              <Bot size={18} aria-hidden="true" className="text-white" />
+              <Sparkles size={17} aria-hidden="true" className="text-white" />
             </motion.button>
 
             {/* New chat */}
@@ -453,25 +454,34 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
             {/* Header */}
             <div className="flex items-center justify-between px-3.5 pt-4 pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-xl flex items-center justify-center shadow-lg shrink-0" style={{ background: sb.gradient }}>
-                  <Bot size={16} aria-hidden="true" className="text-white" />
+                <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: sb.gradient }}>
+                  <Sparkles size={15} aria-hidden="true" className="text-white" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-[14.5px]" style={{ color: sb.text }}>Chatbot</span>
-                  <span className="text-[9px] font-bold text-white px-1.5 py-0.5 rounded-md uppercase tracking-wide" style={{ background: sb.gradient }}>Pro</span>
-                </div>
+                <span className="font-semibold text-[14px]" style={{ color: sb.text }}>Chatbot App</span>
               </div>
               <div className="flex items-center gap-0.5">
+                {/* Theme toggle */}
                 <button
-                  onClick={() => setIsSearchModalOpen(true)}
-                  aria-label="Search conversations"
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  aria-label="Toggle theme"
                   className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors"
                   style={{ color: sb.textMuted }}
                   onMouseEnter={e => e.currentTarget.style.background = sb.hover}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  <Search size={15} aria-hidden="true" />
+                  {theme === 'dark' ? <Sun size={15} aria-hidden="true" /> : <Moon size={15} aria-hidden="true" />}
                 </button>
+                {/* Layout toggle */}
+                <button
+                  aria-label="Toggle layout"
+                  className="hidden md:flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                  style={{ color: sb.textMuted }}
+                  onMouseEnter={e => e.currentTarget.style.background = sb.hover}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <LayoutGrid size={15} aria-hidden="true" />
+                </button>
+                {/* Collapse (desktop) */}
                 <button
                   onClick={() => setIsCollapsed(true)}
                   aria-label="Collapse sidebar"
@@ -482,6 +492,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 >
                   <PanelLeftClose size={15} aria-hidden="true" />
                 </button>
+                {/* Close (mobile) */}
                 <button
                   onClick={() => setIsMobileOpen(false)}
                   aria-label="Close sidebar"
@@ -503,43 +514,53 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 }}
                 aria-label="Start new chat"
                 className="w-full h-10 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors"
-                style={{ background: sb.activeBg, border: `1px solid ${sb.activeBorder}` }}
+                style={{ background: sb.activeBg }}
                 onMouseEnter={e => { e.currentTarget.style.background = sb.hover; }}
                 onMouseLeave={e => { e.currentTarget.style.background = sb.activeBg; }}
               >
-                <SquarePen size={15} aria-hidden="true" style={{ color: '#818cf8' }} />
+                <SquarePen size={15} aria-hidden="true" style={{ color: sb.textMuted }} />
                 <span style={{ color: sb.text }}>New Chat</span>
-                <span className="ml-auto text-[10px] font-normal opacity-40" style={{ color: sb.textMuted }}>Ctrl+N</span>
+                <span className="ml-auto text-[10px] font-normal opacity-40" style={{ color: sb.textMuted }}>Ctrl+O</span>
               </button>
             </div>
 
             {/* Nav links */}
             <nav aria-label="App navigation" className="px-3 pb-1 shrink-0 flex flex-col gap-0.5">
-              {navItems.map(({ to, label, icon: Icon, match }, i) => {
+              {navItems.map(({ to, label, icon: Icon, match, expand }, i) => {
                 const isActive = match(location.pathname);
+                const itemColor = isActive ? sb.text : 'var(--accent-dark)';
                 return (
-                  <motion.div key={to} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
-                    <Link
-                      to={to}
-                      aria-current={isActive ? 'page' : undefined}
-                      onClick={() => window.innerWidth < 768 && setIsMobileOpen(false)}
-                      className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors relative group"
-                      style={{ color: isActive ? sb.text : sb.textMuted }}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="nav-active"
-                          className="absolute inset-0 rounded-xl"
-                          style={{ background: sb.activeBg, border: `1px solid ${sb.activeBorder}` }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                      <Icon size={15} aria-hidden="true" className="shrink-0 relative z-10" style={{ color: isActive ? '#818cf8' : sb.textMuted }} />
-                      <span className="relative z-10">{label}</span>
-                    </Link>
-                  </motion.div>
+                  <Link
+                    key={label}
+                    to={to}
+                    aria-current={isActive ? 'page' : undefined}
+                    onClick={() => window.innerWidth < 768 && setIsMobileOpen(false)}
+                    className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors relative"
+                    style={{ color: itemColor }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = sb.hover; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    {isActive && (
+                      <div className="absolute inset-0 rounded-xl" style={{ background: sb.activeBg }} />
+                    )}
+                    <Icon size={15} aria-hidden="true" className="shrink-0 relative z-10" style={{ color: itemColor }} />
+                    <span className="relative z-10 flex-1">{label}</span>
+                    {expand && <ChevronRight size={13} className="relative z-10 shrink-0" style={{ color: sb.textDim }} />}
+                  </Link>
                 );
               })}
+
+              {/* Search Chat — triggers modal */}
+              <button
+                onClick={() => setIsSearchModalOpen(true)}
+                className="w-full h-9 flex items-center gap-3 px-3 rounded-xl text-[13px] font-medium transition-colors"
+                style={{ color: sb.textMuted }}
+                onMouseEnter={e => e.currentTarget.style.background = sb.hover}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <Search size={15} aria-hidden="true" style={{ color: sb.textMuted }} />
+                <span>Search Chat</span>
+              </button>
             </nav>
 
             {/* Divider */}
@@ -547,6 +568,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
 
             {/* Chat history */}
             <div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-2">
+              <SectionLabel>Your Chats</SectionLabel>
               <AnimatePresence>
                 {pinnedSessionsList.length > 0 && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-2">
@@ -613,9 +635,6 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: sb.text }}>
                     {userProfile?.full_name || userProfile?.username || 'User'}
-                  </p>
-                  <p className="text-[11px] truncate mt-0.5" style={{ color: sb.textDim }}>
-                    {userProfile?.email || 'Free plan'}
                   </p>
                 </div>
                 <MoreHorizontal size={15} aria-hidden="true" className="opacity-0 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: sb.textMuted }} />
