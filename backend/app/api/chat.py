@@ -49,6 +49,7 @@ def chat_with_ai(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    print(f"DEBUG: /chat called — prompt='{prompt[:30]}', session_id={session_id}", flush=True)
     prompt = prompt.strip()
     if not prompt and not files:
         raise HTTPException(

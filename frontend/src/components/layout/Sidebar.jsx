@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useContext } from 'react';
+import React, { useState, useCallback, useContext, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, Search, X, Pencil, Check, Settings, User, SquarePen,
@@ -54,6 +54,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     () => JSON.parse(localStorage.getItem('pinnedSessions') || '[]')
   );
   const [showProjectSubmenu, setShowProjectSubmenu]   = useState(false);
+  const [dropdownPos, setDropdownPos]                 = useState({ top: 0, left: 0 });
 
   const togglePin = (e, sessionId) => {
     e.stopPropagation();
@@ -213,7 +214,20 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
         ) : (
           <>
             <button
-              onClick={e => { e.stopPropagation(); setOpenSessionDropdown(openSessionDropdown === session.id ? null : session.id); setShowProjectSubmenu(false); }}
+              onClick={e => {
+                  e.stopPropagation();
+                  if (openSessionDropdown !== session.id) {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const dropdownHeight = 180;
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const top = spaceBelow < dropdownHeight
+                      ? rect.top - dropdownHeight
+                      : rect.bottom + 4;
+                    setDropdownPos({ top, left: rect.right });
+                  }
+                  setOpenSessionDropdown(openSessionDropdown === session.id ? null : session.id);
+                  setShowProjectSubmenu(false);
+                }}
               aria-label="More options"
               className="p-1.5 rounded-lg transition-colors"
               style={{ color: sb.textMuted }}
@@ -231,8 +245,14 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 4 }}
                     transition={{ duration: 0.12 }}
-                    className="absolute -right-2 bottom-full mb-1.5 origin-bottom-right w-44 z-50 overflow-hidden py-1.5 rounded-xl"
-                    style={{ background: sb.dropdownBg, border: `1px solid ${sb.dropdownBorder}`, boxShadow: sb.shadow }}
+                    className="fixed origin-top-left w-44 z-50 overflow-hidden py-1.5 rounded-xl"
+                    style={{
+                      top: dropdownPos.top,
+                      left: Math.min(dropdownPos.left - 176, window.innerWidth - 192),
+                      background: sb.dropdownBg,
+                      border: `1px solid ${sb.dropdownBorder}`,
+                      boxShadow: sb.shadow
+                    }}
                     onKeyDown={handleDropdownKeyDown}
                   >
                     {showProjectSubmenu ? (

@@ -40,10 +40,10 @@ export const ChatInput = ({ onSend, isSending, currentSessionId }) => {
   };
 
   const MODEL_OPTIONS = [
-    { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B', description: 'Flagship, best quality (default)' },
-    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', description: 'Large, versatile' },
-    { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B', description: 'Smaller, faster' },
+    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', description: 'Best quality, recommended' },
     { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B', description: 'Fastest, lightweight' },
+    { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B', description: 'Good for long context' },
+    { id: 'gemma2-9b-it', label: 'Gemma 2 9B', description: 'Google, efficient' },
   ];
 
   const [model, setModel] = useState(() => localStorage.getItem('chat_model') || MODEL_OPTIONS[0].id);

@@ -8,6 +8,7 @@ import { ChatInput } from './ChatInput';
 export const ChatArea = () => {
   const { messages, isSending, sendMessage, loadSession, handleNewChat, currentSessionId, error, errorType, userProfile } = useChat();
   const messagesEndRef = useRef(null);
+  const initialMessageSent = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,8 +20,9 @@ export const ChatArea = () => {
       handleNewChat();
       const initialMsg = location.state?.initialMessage;
       navigate(location.pathname, { replace: true, state: {} });
-      if (initialMsg) {
-        setTimeout(() => sendMessage(initialMsg), 300);
+      if (initialMsg && !initialMessageSent.current) {
+        initialMessageSent.current = true;
+        setTimeout(() => sendMessage(initialMsg), 100);
       }
     }
   }, [location.state?.sessionId, location.state?.newChat, location.state?.initialMessage, currentSessionId]);
@@ -95,7 +97,10 @@ export const ChatArea = () => {
             {messages.map((msg, index) => (
               <MessageBubble key={index} message={msg} index={index} />
             ))}
-            {isSending && messages[messages.length - 1]?.role !== 'ai' && (
+            {isSending && (
+              messages[messages.length - 1]?.role !== 'ai' ||
+              messages[messages.length - 1]?.content === ''
+            ) && (
               <MessageBubble message={{ role: 'ai', content: '' }} isTyping={true} />
             )}
             <div ref={messagesEndRef} />

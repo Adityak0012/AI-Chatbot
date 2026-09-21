@@ -201,14 +201,18 @@ export const ChatProvider = ({ children }) => {
     if (attachments && attachments.length > 0) {
       const imageLinks = [];
       const fileLinks = [];
-      attachments.forEach(file => {
+      for (const file of attachments) {
         if (file.type && file.type.startsWith('image/')) {
-          const localUrl = URL.createObjectURL(file);
-          imageLinks.push(`![Attached Image](${localUrl})`);
+          const base64Url = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
+          imageLinks.push(`![Attached Image](${base64Url})`);
         } else {
           fileLinks.push(`[📄 ${file.name}](#)`);
         }
-      });
+      }
       const allLinks = [...imageLinks, ...fileLinks].join('\n\n');
       if (allLinks) {
         displayContent = displayContent ? `${allLinks}\n\n${displayContent}` : allLinks;
@@ -330,19 +334,6 @@ export const ChatProvider = ({ children }) => {
         setCurrentSessionId(newSessionId);
         const historyRes = await api.get('/chat/history');
         setSessions(historyRes.data);
-        // Replace blob URLs with server URLs in user message
-        const sessionRes = await api.get(`/chat/history/${newSessionId}`);
-        if (sessionRes.data.messages?.length > 0) {
-          const lastUserMsg = sessionRes.data.messages.find(m => m.role === 'user');
-          if (lastUserMsg) {
-            setMessages(prev => {
-              const updated = [...prev];
-              const userMsgIdx = updated.findIndex(m => m.role === 'user' && m.content.includes('blob:'));
-              if (userMsgIdx !== -1) updated[userMsgIdx] = { role: 'user', content: lastUserMsg.content };
-              return updated;
-            });
-          }
-        }
       } else {
         setSessions(prev => {
           const updated = [...prev];
@@ -374,7 +365,7 @@ export const ChatProvider = ({ children }) => {
 
   const regenerateResponse = async (index) => {
     if (isSending) return;
-    
+
     let userMsgIndex = -1;
     for (let i = index - 1; i >= 0; i--) {
       if (messages[i].role === 'user') {
@@ -382,11 +373,9 @@ export const ChatProvider = ({ children }) => {
         break;
       }
     }
-    
     if (userMsgIndex === -1) return;
-    
+
     const content = messages[userMsgIndex].content;
-    
     setMessages(prev => prev.slice(0, userMsgIndex + 1));
     setIsSending(true);
     setError('');
@@ -394,26 +383,78 @@ export const ChatProvider = ({ children }) => {
     try {
       const formData = new FormData();
       formData.append('prompt', content);
-      if (currentSessionId) {
-        formData.append('session_id', currentSessionId);
+      formData.append('stream', '1');
+      if (currentSessionId) formData.append('session_id', currentSessionId);
+
+      const token = localStorage.getItem('access_token');
+      const baseURL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+      const response = await fetch(`${baseURL}/chat`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        setErrorWithType(errData.detail || 'Failed to regenerate.', 'general');
+        return;
       }
-      
-      const response = await api.post('/chat', formData);
-      
-      let finalContent = response.data.response;
-      if (Array.isArray(finalContent)) {
-        finalContent = finalContent.join('\n');
-      } else if (typeof finalContent === 'object' && finalContent !== null) {
-        finalContent = finalContent.content || finalContent.message || String(finalContent);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedContent = '';
+      let buffer = '';
+      let animFrameId = null;
+      let pendingContent = '';
+
+      setMessages(prev => [...prev, { role: 'ai', content: '' }]);
+
+      const flushUpdate = () => {
+        const snap = pendingContent;
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'ai', content: snap, isStreaming: true };
+          return updated;
+        });
+        animFrameId = null;
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) {
+                streamedContent += data.content;
+                pendingContent = streamedContent;
+              }
+            } catch {}
+          }
+        }
+
+        if (!animFrameId) {
+          animFrameId = requestAnimationFrame(flushUpdate);
+        }
       }
-      finalContent = String(finalContent || '');
-      
-      setMessages(prev => [...prev, { role: 'ai', content: finalContent }]);
+
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { role: 'ai', content: streamedContent, isStreaming: false };
+        return updated;
+      });
 
       if (soundEnabled) playNotificationSound();
-      if (desktopNotifEnabled) showDesktopNotification('New response', finalContent.slice(0, 100));
+      if (desktopNotifEnabled) showDesktopNotification('New response', streamedContent.slice(0, 100));
       if (responseAlertsEnabled) flashTabTitle('💬 New reply');
-      
+
       if (currentSessionId) {
         setSessions(prev => {
           const updated = [...prev];
@@ -428,12 +469,8 @@ export const ChatProvider = ({ children }) => {
       }
     } catch (err) {
       console.error(err);
-      if (err.response?.status === 401) {
-        handleLogout();
-      } else {
-        const backendError = err.response?.data?.detail || 'Failed to get a response. Please try again.';
-        setError(backendError);
-      }
+      setErrorWithType('Failed to regenerate response.', 'general');
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsSending(false);
     }

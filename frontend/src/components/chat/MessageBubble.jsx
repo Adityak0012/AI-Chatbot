@@ -60,6 +60,7 @@ const CodeBlock = ({ language, code, ...props }) => {
 export const MessageBubble = ({ message, isTyping, index }) => {
   const isAi = message.role === 'ai';
   const isStreaming = message.isStreaming === true;
+  if (isAi && !isTyping && !message.content) return null;
   const { fontSize } = useSettings();
   const { regenerateResponse, saveMessage, unsaveMessage } = useChat() || {};
   const [copied, setCopied] = useState(false);
@@ -181,7 +182,7 @@ export const MessageBubble = ({ message, isTyping, index }) => {
       >
         <div
           className={cn("max-w-[75%] px-4 py-2.5 rounded-2xl rounded-tr-sm text-[var(--text)] break-words", textSizes[fontSize] || "text-[15px]")}
-          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', boxShadow: '0 1px 4px var(--shadow)' }}
         >
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
             {message.content}
@@ -194,53 +195,64 @@ export const MessageBubble = ({ message, isTyping, index }) => {
   /* ── AI message: bot icon left + plain prose, no bubble ── */
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: 'easeOut' }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className="group w-full flex items-start gap-3 py-2 md:py-2.5"
     >
       {/* Bot icon */}
-      <div className="shrink-0 mt-0.5 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: '#000' }}>
-        <Bot size={14} aria-hidden="true" className="text-white" />
+      <div className="shrink-0 mt-1 w-9 h-9 rounded-full flex items-center justify-center"
+        style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)', boxShadow: '0 2px 8px rgba(99,102,241,0.25)' }}>
+        <Bot size={17} aria-hidden="true" className="text-white" />
       </div>
 
       {/* Content */}
       <div className={cn("flex-1 min-w-0 flex flex-col", textSizes[fontSize] || "text-[15px]")}>
-        {isTyping ? (
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22 }}
-            className="flex gap-1.5 items-center py-2"
-            aria-label="AI is typing"
-            role="status"
-          >
-            {[0, 0.18, 0.36].map((delay, i) => (
+{isTyping ? (
+          <div className="flex flex-col gap-3 py-2 w-full max-w-xs" aria-label="AI is thinking" role="status">
+            <div className="flex items-center gap-2 mb-1">
               <motion.span
+                className="text-xs font-medium"
+                style={{ color: 'var(--text-secondary)' }}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+              >
+                Thinking...
+              </motion.span>
+            </div>
+            {['88%', '72%', '55%'].map((w, i) => (
+              <motion.div
                 key={i}
-                aria-hidden="true"
-                className="block w-2 h-2 rounded-full bg-[var(--text-secondary)]"
-                animate={{ y: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
-                transition={{ repeat: Infinity, duration: 0.75, delay, ease: 'easeInOut' }}
+                className="h-2.5 rounded-full"
+                style={{ width: w, background: 'var(--surface-2)' }}
+                animate={{ opacity: [0.3, 0.7, 0.3] }}
+                transition={{ repeat: Infinity, duration: 1.6, delay: i * 0.2, ease: 'easeInOut' }}
               />
             ))}
-          </motion.div>
+          </div>
         ) : (
           <>
-            <div className="prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-l-0 prose-table:text-[var(--text)] prose-th:text-[var(--text)] prose-td:text-[var(--text)] max-w-none break-words text-[var(--text)]">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} key={isStreaming ? message.content.length : 'done'} components={markdownComponents}>
-                {message.content}
-              </ReactMarkdown>
-              {isStreaming && (
+            {isStreaming ? (
+              <div className="prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-l-0 prose-table:text-[var(--text)] prose-th:text-[var(--text)] prose-td:text-[var(--text)] leading-7 prose-p:leading-7 prose-li:leading-7 prose-headings:font-semibold prose-headings:mt-5 prose-headings:mb-2 prose-p:mt-0 [&>*:first-child]:mt-0 max-w-none break-words text-[var(--text)]">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {message.content}
+                </ReactMarkdown>
                 <motion.span
                   className="inline-block w-[2px] h-[1em] bg-[var(--text)] ml-0.5 align-middle"
                   animate={{ opacity: [1, 0, 1] }}
                   transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
                 />
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="prose prose-headings:text-[var(--text)] prose-p:text-[var(--text)] prose-strong:text-[var(--text)] prose-a:text-[var(--primary)] prose-code:text-[var(--text)] prose-ul:text-[var(--text)] prose-ol:text-[var(--text)] prose-li:text-[var(--text)] prose-blockquote:text-[var(--text-secondary)] prose-blockquote:border-l-0 prose-table:text-[var(--text)] prose-th:text-[var(--text)] prose-td:text-[var(--text)] leading-7 prose-p:leading-7 prose-li:leading-7 prose-headings:font-semibold prose-headings:mt-5 prose-headings:mb-2 prose-p:mt-0 [&>*:first-child]:mt-0 max-w-none break-words text-[var(--text)]">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            )}
 
-            <div className="flex items-center gap-0.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150" role="toolbar" aria-label="Message actions">
+            <div className="flex items-center gap-0.5 mt-3 pt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150" role="toolbar" aria-label="Message actions"
+>
               <button onClick={handleCopy} aria-label={copied ? 'Copied' : 'Copy message'} className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--text)] rounded-lg hover:bg-[var(--hover)] transition-colors">
                 {copied ? <Check size={14} aria-hidden="true" className="text-green-500" /> : <Copy size={14} aria-hidden="true" />}
               </button>
