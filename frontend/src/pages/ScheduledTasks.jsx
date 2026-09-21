@@ -103,8 +103,8 @@ const ScheduledTasks = () => {
                     setEditingTask(null);
                     setIsModalOpen(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all active:scale-95"
-                  style={{ background: 'var(--text)', color: 'var(--bg)' }}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg shrink-0"
+                  style={{ background: 'var(--text)', color: 'var(--bg)', transition: 'all 0.2s ease' }}
                   onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
                   onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                 >

@@ -82,10 +82,10 @@ export const SearchModal = ({ isOpen, onClose }) => {
                           loadSession(session.id);
                           onClose();
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--surface-2)] transition-colors text-left group"
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[var(--hover)] transition-colors text-left group"
                       >
-                        <div className="p-2 rounded-lg bg-[var(--surface-2)] group-hover:bg-[var(--surface)] transition-colors">
-                          <MessageCircle size={18} className="text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" />
+                        <div className="p-2 rounded-lg bg-[var(--surface-2)] group-hover:bg-[var(--hover)] transition-colors">
+                          <MessageCircle size={18} className="text-[var(--text-secondary)] group-hover:text-[var(--text)] transition-colors" />
                         </div>
                         <span className="flex-1 truncate text-[15px] text-[var(--text)] font-medium">
                           {session.title}

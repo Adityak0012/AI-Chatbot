@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { WifiOff, Clock, AlertTriangle, RefreshCw } from 'lucide-react';
+import { WifiOff, Clock, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageBubble } from './MessageBubble';
@@ -55,18 +55,38 @@ export const ChatArea = () => {
         {messages.length === 0 ? (
           /* ── Empty state: greeting + composer grouped and centered ── */
           <div className="h-full flex flex-col items-center justify-center px-4">
-            <h2 style={{
-              fontSize: '2.5rem',
-              letterSpacing: '-0.02em',
-              color: 'var(--text)',
-              lineHeight: 1.15,
-              marginBottom: '1.5rem',
-              textAlign: 'center',
-              fontWeight: 400,
-            }}>
-              <span style={{ fontWeight: 300 }}>Good to </span>
-              <span style={{ fontWeight: 700 }}>see you.</span>
-            </h2>
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour >= 5 && hour < 12 ? 'Good morning'
+                : hour >= 12 && hour < 17 ? 'Good afternoon'
+                : hour >= 17 && hour < 21 ? 'Good evening'
+                : 'Good night';
+              const timeOfDay = hour >= 5 && hour < 12 ? 'Morning'
+                : hour >= 12 && hour < 17 ? 'Afternoon'
+                : hour >= 17 && hour < 21 ? 'Evening'
+                : 'Night';
+              const fullName = userProfile?.full_name || userProfile?.username || '';
+              const firstName = fullName.split(' ')[0] || 'there';
+              return (
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    background: 'var(--surface-2)', border: '1px solid var(--border)',
+                    borderRadius: '999px', padding: '4px 14px', marginBottom: '16px',
+                    fontSize: '13px', color: 'var(--text-secondary)'
+                  }}>
+                    <Sparkles size={13} style={{ color: 'var(--primary)' }} />
+                    {timeOfDay} • {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+                  </div>
+                  <h2 style={{ fontSize: '2.5rem', fontWeight: 300, color: 'var(--text)', letterSpacing: '-0.02em', margin: 0 }}>
+                    {greeting}, <span style={{ fontWeight: 700 }}>{firstName}.</span>
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginTop: '8px' }}>
+                    How can I help you today?
+                  </p>
+                </div>
+              );
+            })()}
             <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
           </div>
         ) : (

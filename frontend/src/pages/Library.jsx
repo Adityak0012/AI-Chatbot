@@ -127,10 +127,10 @@ const Library = () => {
 
             <button
               onClick={handleUploadClick}
-              className="flex items-center justify-center gap-2 px-4 py-2 text-white text-sm font-medium rounded-lg shrink-0"
-              style={{ background: '#111827', transition: 'all 0.2s ease' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#374151'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#111827'; }}
+              className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg shrink-0"
+              style={{ background: 'var(--text)', color: 'var(--bg)', transition: 'all 0.2s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--text-secondary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--text)'; }}
             >
               <Plus size={16} />
               <span>New</span>
