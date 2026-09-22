@@ -69,6 +69,14 @@ def update_users_me(
     db.refresh(current_user)
     return current_user
 
+@router.get("/me/usage")
+def get_usage(current_user: User = Depends(get_current_user)):
+    return {
+        "daily_message_count": current_user.daily_message_count or 0,
+        "is_pro": current_user.is_pro or False,
+        "limit": 20,
+    }
+
 @router.post("/me/avatar", response_model=UserResponse)
 def upload_avatar(
     file: UploadFile = File(...),

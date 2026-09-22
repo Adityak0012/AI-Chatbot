@@ -3,15 +3,19 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 export const useSpeechToText = (onTranscript) => {
   const [isListening, setIsListening] = useState(false);
   const [supported, setSupported] = useState(true);
-  const [recognition, setRecognition] = useState(null);
-  // Tracks the user's intent (did they click stop?) separately from the
-  // engine's internal state, so we can auto-restart after Chrome's
-  // silent auto-stop without restarting after a deliberate stop.
+  // Use refs so toggleListening always reads the latest values without
+  // needing to recreate the recognition object when they change.
+  const recognitionRef = useRef(null);
   const shouldListenRef = useRef(false);
+  const onTranscriptRef = useRef(onTranscript);
+
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+  });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setSupported(false);
@@ -21,7 +25,7 @@ export const useSpeechToText = (onTranscript) => {
     const rec = new SpeechRecognition();
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = 'en-IN';
+    rec.lang = 'en-US';
 
     rec.onresult = (event) => {
       let finalTranscript = '';
@@ -34,8 +38,8 @@ export const useSpeechToText = (onTranscript) => {
           interimTranscript += chunk;
         }
       }
-      if (onTranscript) {
-        onTranscript({ final: finalTranscript, interim: interimTranscript });
+      if (onTranscriptRef.current) {
+        onTranscriptRef.current({ final: finalTranscript, interim: interimTranscript });
       }
     };
 
@@ -43,22 +47,21 @@ export const useSpeechToText = (onTranscript) => {
       console.error('Speech recognition error', event.error);
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         shouldListenRef.current = false;
-        alert('Mic permission blocked hai. Browser ke address bar ke paas mic icon se allow karo.');
+        alert('Mic permission blocked. Please allow mic access from the browser address bar.');
       } else if (event.error === 'audio-capture') {
         shouldListenRef.current = false;
-        alert('Koi microphone detect nahi hua. Device settings check karo.');
+        alert('No microphone detected. Please check your device settings.');
       }
-      // other errors (e.g. 'no-speech') are non-fatal; onend below decides
-      // whether to restart or stop.
+      // non-fatal errors (e.g. 'no-speech') fall through; onend handles restart
     };
 
     rec.onend = () => {
       if (shouldListenRef.current) {
-        // Chrome ends recognition after a pause even in continuous mode.
+        // Chrome silently stops recognition after a pause in continuous mode.
         // Restart automatically since the user hasn't clicked stop.
         try {
           rec.start();
-        } catch (err) {
+        } catch {
           setIsListening(false);
         }
       } else {
@@ -66,26 +69,33 @@ export const useSpeechToText = (onTranscript) => {
       }
     };
 
-    setRecognition(rec);
-  }, [onTranscript]);
+    recognitionRef.current = rec;
+
+    return () => {
+      shouldListenRef.current = false;
+      try { rec.stop(); } catch {}
+      recognitionRef.current = null;
+    };
+  }, []); // created once — onTranscript is read via ref
 
   const toggleListening = useCallback(() => {
-    if (!supported || !recognition) return;
+    const rec = recognitionRef.current;
+    if (!supported || !rec) return;
 
     if (isListening) {
       shouldListenRef.current = false;
-      recognition.stop();
+      rec.stop();
       setIsListening(false);
     } else {
       shouldListenRef.current = true;
       try {
-        recognition.start();
+        rec.start();
         setIsListening(true);
       } catch (err) {
         console.error('Failed to start recognition:', err);
       }
     }
-  }, [isListening, recognition, supported]);
+  }, [isListening, supported]);
 
   return { isListening, supported, toggleListening };
 };

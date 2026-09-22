@@ -18,6 +18,7 @@ from app.api.scheduled_tasks import router as scheduled_tasks_router
 from app.api.projects import router as projects_router
 from app.api.library import router as library_router
 from app.models.attachment import Attachment
+from app.api import payments as payments_module
 from contextlib import asynccontextmanager
 
 print("✅ Database Connected Successfully")
@@ -74,6 +75,15 @@ with engine.connect() as _conn:
     _conn.execute(text(
         "ALTER TABLE chat_sessions ADD COLUMN IF NOT EXISTS ai_titled BOOLEAN NOT NULL DEFAULT FALSE"
     ))
+    _conn.execute(text(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN NOT NULL DEFAULT FALSE"
+    ))
+    _conn.execute(text(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_message_count INTEGER NOT NULL DEFAULT 0"
+    ))
+    _conn.execute(text(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_message_date DATE"
+    ))
     _conn.commit()
 
 app.include_router(health_router)
@@ -83,6 +93,7 @@ app.include_router(chat_router)
 app.include_router(scheduled_tasks_router)
 app.include_router(projects_router)
 app.include_router(library_router)
+app.include_router(payments_module.router)
 
 # Mount static directory for uploads
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "static", "uploads")

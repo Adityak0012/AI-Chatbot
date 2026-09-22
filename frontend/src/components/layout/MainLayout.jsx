@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Sidebar } from './Sidebar';
 import { Menu, Plus, ChevronDown, Download, FileText, FileDown, Share2, Check, Search, Gem, Bell } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useChat } from '../../context/ChatContext';
 import { SearchModal } from '../ui/SearchModal';
 import { SettingsContext } from '../../context/SettingsContext';
@@ -9,6 +9,7 @@ import api from '../../services/api';
 
 export const MainLayout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isChatPage = location.pathname.startsWith('/chat');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showExportMenu, setShowExportMenu]           = useState(false);
@@ -108,14 +109,17 @@ export const MainLayout = ({ children }) => {
           {/* RIGHT — Go Pro + Bell */}
           <div className="flex items-center gap-2">
 
-            {/* Go Pro */}
-            <button
-              className="go-pro-btn hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)', color: '#fff' }}
-            >
-              <Gem size={14} aria-hidden="true" />
-              Go Pro
-            </button>
+            {/* Go Pro — hidden when already Pro */}
+            {!userProfile?.is_pro && (
+              <button
+                onClick={() => navigate('/pricing')}
+                className="go-pro-btn hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold transition-colors hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)', color: '#fff' }}
+              >
+                <Gem size={14} aria-hidden="true" />
+                Go Pro
+              </button>
+            )}
 
             {/* Notification bell */}
             <button

@@ -11,6 +11,7 @@ import Library from '../pages/Library';
 import Documents from '../pages/Documents';
 import ScheduledTasks from '../pages/ScheduledTasks';
 import Explore from '../pages/Explore';
+import Pricing from '../pages/Pricing';
 import { ProjectWorkspace } from '../components/projects/ProjectWorkspace';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import NotFound from '../pages/NotFound';
@@ -33,6 +34,7 @@ const AppRoutes = () => {
         <Route path="/documents" element={<Documents />} />
         <Route path="/scheduled" element={<ScheduledTasks />} />
         <Route path="/explore" element={<Explore />} />
+        <Route path="/pricing" element={<Pricing />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

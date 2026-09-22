@@ -1,12 +1,14 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { WifiOff, Clock, AlertTriangle, RefreshCw, Sparkles } from 'lucide-react';
 import { useChat } from '../../context/ChatContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
+import api from '../../services/api';
 
 export const ChatArea = () => {
   const { messages, isSending, sendMessage, loadSession, handleNewChat, currentSessionId, error, errorType, userProfile } = useChat();
+  const [usage, setUsage] = useState(null);
   const messagesEndRef = useRef(null);
   const initialMessageSent = useRef(false);
   const location = useLocation();
@@ -26,6 +28,13 @@ export const ChatArea = () => {
       }
     }
   }, [location.state?.sessionId, location.state?.newChat, location.state?.initialMessage, currentSessionId]);
+
+  // Fetch usage count so we can show the "X messages left" warning
+  useEffect(() => {
+    if (userProfile && !userProfile.is_pro) {
+      api.get('/users/me/usage').then(r => setUsage(r.data)).catch(() => {});
+    }
+  }, [userProfile, messages.length]);
 
   const containerRef = useRef(null);
   const userScrolledUp = useRef(false);
@@ -89,6 +98,19 @@ export const ChatArea = () => {
                 </div>
               );
             })()}
+            {!userProfile?.is_pro && usage?.daily_message_count >= 15 && (
+              <div className="w-full max-w-3xl mb-3 px-3 py-2.5 rounded-xl text-sm flex items-center justify-between"
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text)' }}>
+                  ⚠️ {20 - usage.daily_message_count} message{20 - usage.daily_message_count === 1 ? '' : 's'} left today
+                </span>
+                <button onClick={() => navigate('/pricing')}
+                  className="text-xs font-semibold px-3 py-1 rounded-full ml-4 shrink-0 transition-opacity hover:opacity-80"
+                  style={{ background: 'var(--primary)', color: 'white' }}>
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
             <ChatInput onSend={sendMessage} isSending={isSending} currentSessionId={currentSessionId} />
           </div>
         ) : (
@@ -112,6 +134,19 @@ export const ChatArea = () => {
       {messages.length > 0 && (
         <div className="shrink-0 bg-gradient-to-t from-[var(--bg)] via-[var(--bg)] to-transparent pt-10 pb-0 absolute bottom-0 left-0 right-0 w-full z-10 pointer-events-none">
           <div className="pointer-events-auto">
+            {!userProfile?.is_pro && usage?.daily_message_count >= 15 && (
+              <div className="mx-auto max-w-3xl px-4 mb-2 py-2.5 rounded-xl text-sm flex items-center justify-between"
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text)' }}>
+                  ⚠️ {20 - usage.daily_message_count} message{20 - usage.daily_message_count === 1 ? '' : 's'} left today
+                </span>
+                <button onClick={() => navigate('/pricing')}
+                  className="text-xs font-semibold px-3 py-1 rounded-full ml-4 shrink-0 transition-opacity hover:opacity-80"
+                  style={{ background: 'var(--primary)', color: 'white' }}>
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
             {error && (
               <div className="mx-auto max-w-3xl px-4 mb-2">
                 <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium

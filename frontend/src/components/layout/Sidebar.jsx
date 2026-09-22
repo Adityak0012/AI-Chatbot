@@ -651,10 +651,16 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
                 className="w-full flex items-center gap-2.5 cursor-pointer p-2 rounded-xl transition-colors group text-left"
               >
                 <Avatar size={32} />
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex items-center gap-2">
                   <p className="text-[13px] font-semibold truncate leading-tight" style={{ color: sb.text }}>
                     {userProfile?.full_name || userProfile?.username || 'User'}
                   </p>
+                  {userProfile?.is_pro && (
+                    <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                      style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: 'white' }}>
+                      PRO
+                    </span>
+                  )}
                 </div>
                 <MoreHorizontal size={15} aria-hidden="true" className="opacity-0 group-hover:opacity-60 transition-opacity shrink-0" style={{ color: sb.textMuted }} />
               </motion.button>

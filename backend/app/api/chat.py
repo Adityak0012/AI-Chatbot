@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import uuid
+from datetime import date
 
 from app.models.user import User
 from app.models.chat import ChatSession, ChatMessage
@@ -50,6 +51,19 @@ def chat_with_ai(
     db: Session = Depends(get_db)
 ):
     print(f"DEBUG: /chat called — prompt='{prompt[:30]}', session_id={session_id}", flush=True)
+
+    # Rate limiting: free users capped at 20 messages/day
+    if not current_user.is_pro:
+        today = date.today()
+        if current_user.last_message_date != today:
+            current_user.daily_message_count = 0
+            current_user.last_message_date = today
+        if current_user.daily_message_count >= 20:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Daily message limit reached. Upgrade to Pro for unlimited messages."
+            )
+
     prompt = prompt.strip()
     if not prompt and not files:
         raise HTTPException(
@@ -134,6 +148,12 @@ def chat_with_ai(
         content=db_content
     )
     db.add(user_message)
+
+    # Increment daily counter for free users
+    if not current_user.is_pro:
+        current_user.daily_message_count = (current_user.daily_message_count or 0) + 1
+        db.add(current_user)
+
     db.commit()
 
     ai_prompt = prompt
@@ -194,6 +214,7 @@ def chat_with_ai(
     ]
 
     if stream:
+        print(f"DEBUG: final model passed to provider = {model}", flush=True)
         def stream_generator():
             full_response = ""
             try:

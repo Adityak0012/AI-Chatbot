@@ -50,7 +50,7 @@ class GroqProvider(BaseAIProvider):
             "Content-Type": "application/json"
         }
 
-        selected_model = model or getattr(settings, "GROQ_MODEL", "llama-3.3-70b-versatile")
+        selected_model = model or getattr(settings, "GROQ_MODEL", "openai/gpt-oss-120b")
 
         messages = []
         if history:
@@ -141,7 +141,7 @@ class GroqProvider(BaseAIProvider):
             "Content-Type": "application/json"
         }
 
-        selected_model = model or getattr(settings, "GROQ_MODEL", "llama-3.3-70b-versatile")
+        selected_model = model or getattr(settings, "GROQ_MODEL", "openai/gpt-oss-120b")
 
         messages = []
         if history:
