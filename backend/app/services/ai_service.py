@@ -38,14 +38,10 @@ def generate_ai_response(prompt: str, images: list = None, model: str = None, hi
         except Exception as e:
             return f"Error generating image: {e}"
 
-    provider_name = "gemini" if images else settings.AI_PROVIDER
-    provider = ProviderFactory.get_provider(provider_name)
-    effective_model = None if images else model
-    return provider.generate_response(prompt, images=images, model=effective_model, history=history)
+    provider = ProviderFactory.get_provider(settings.AI_PROVIDER)
+    return provider.generate_response(prompt, images=images, model=model, history=history)
 
 def generate_ai_stream(prompt: str, images: list = None, model: str = None, history: list = None):
     print(f"DEBUG ai_stream: images={images}", flush=True)
-    provider_name = "gemini" if images else settings.AI_PROVIDER
-    provider = ProviderFactory.get_provider(provider_name)
-    effective_model = None if images else model
-    yield from provider.generate_stream(prompt, images=images, model=effective_model, history=history)
+    provider = ProviderFactory.get_provider(settings.AI_PROVIDER)
+    yield from provider.generate_stream(prompt, images=images, model=model, history=history)

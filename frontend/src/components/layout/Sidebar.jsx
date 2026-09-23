@@ -55,6 +55,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
   );
   const [showProjectSubmenu, setShowProjectSubmenu]   = useState(false);
   const [dropdownPos, setDropdownPos]                 = useState({ top: 0, left: 0 });
+  const [isHelpMenuOpen, setIsHelpMenuOpen]           = useState(false);
 
   const togglePin = (e, sessionId) => {
     e.stopPropagation();
@@ -126,7 +127,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     { icon: Palette,     label: 'Personalization', action: (e) => { e.stopPropagation(); setIsProfileDropdownOpen(false); setSettingsInitialTab('personalization'); setIsSettingsOpen(true); } },
     { icon: User,        label: 'Profile',         action: (e) => { e.stopPropagation(); setIsProfileDropdownOpen(false); setIsEditProfileOpen(true); } },
     { icon: Settings,    label: 'Settings',        action: (e) => { e.stopPropagation(); setIsProfileDropdownOpen(false); setSettingsInitialTab('general'); setIsSettingsOpen(true); } },
-    { icon: HelpCircle,  label: 'Help',            action: (e) => { e.stopPropagation(); setIsProfileDropdownOpen(false); } },
+    { icon: HelpCircle,  label: 'Help',            action: (e) => { e.stopPropagation(); setIsHelpMenuOpen(true); } },
   ];
 
   const userInitial = userProfile?.username?.charAt(0)?.toUpperCase() || 'A';
@@ -337,7 +338,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
     <AnimatePresence>
       {isProfileDropdownOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={e => { e.stopPropagation(); setIsProfileDropdownOpen(false); }} />
+          <div className="fixed inset-0 z-40" onClick={e => { e.stopPropagation(); setIsProfileDropdownOpen(false); setIsHelpMenuOpen(false); }} />
           <motion.div
             initial={{ opacity: 0, y: placement === 'above' ? 8 : -8, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -352,21 +353,51 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
             style={{ background: sb.dropdownBg, border: `1px solid ${sb.dropdownBorder}`, boxShadow: sb.shadow }}
             onKeyDown={handleDropdownKeyDown}
           >
-            {profileMenuItems.map(({ icon: Icon, label, action }) => (
-              <motion.button key={label} whileHover={{ x: 2 }} onClick={action}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors"
-                style={{ color: sb.textMuted }}
-              >
-                <Icon size={14} aria-hidden="true" />{label}
-              </motion.button>
-            ))}
-            <div className="h-px mx-3 my-1" style={{ background: sb.divider }} />
-            <motion.button whileHover={{ x: 2 }}
-              onClick={e => { e.stopPropagation(); setIsProfileDropdownOpen(false); handleLogout(); }}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-colors"
-            >
-              <LogOut size={14} aria-hidden="true" /> Log out
-            </motion.button>
+            {isHelpMenuOpen ? (
+              <>
+                <motion.button whileHover={{ x: 2 }}
+                  onClick={e => { e.stopPropagation(); setIsHelpMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors"
+                  style={{ color: sb.textMuted }}
+                >
+                  <ChevronLeft size={14} aria-hidden="true" />
+                  <span>Help</span>
+                </motion.button>
+                <div className="h-px mx-3 my-1" style={{ background: sb.divider }} />
+                {[
+                  { label: 'Help center',    href: 'https://help.example.com' },
+                  { label: 'Privacy center', href: 'https://privacy.example.com' },
+                  { label: 'Release notes',  href: 'https://changelog.example.com' },
+                ].map(({ label, href }) => (
+                  <motion.a key={label} whileHover={{ x: 2 }}
+                    href={href} target="_blank" rel="noopener noreferrer"
+                    onClick={e => { setIsProfileDropdownOpen(false); setIsHelpMenuOpen(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors"
+                    style={{ color: sb.textMuted }}
+                  >
+                    {label}
+                  </motion.a>
+                ))}
+              </>
+            ) : (
+              <>
+                {profileMenuItems.map(({ icon: Icon, label, action }) => (
+                  <motion.button key={label} whileHover={{ x: 2 }} onClick={action}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors"
+                    style={{ color: sb.textMuted }}
+                  >
+                    <Icon size={14} aria-hidden="true" />{label}
+                  </motion.button>
+                ))}
+                <div className="h-px mx-3 my-1" style={{ background: sb.divider }} />
+                <motion.button whileHover={{ x: 2 }}
+                  onClick={e => { e.stopPropagation(); setIsProfileDropdownOpen(false); handleLogout(); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <LogOut size={14} aria-hidden="true" /> Log out
+                </motion.button>
+              </>
+            )}
           </motion.div>
         </>
       )}
@@ -459,7 +490,7 @@ export const Sidebar = ({ isMobileOpen, setIsMobileOpen }) => {
             {/* Avatar */}
             <motion.button
               whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-              onClick={() => setIsProfileDropdownOpen(p => !p)}
+              onClick={() => { setIsProfileDropdownOpen(p => !p); setIsHelpMenuOpen(false); }}
               aria-label="Open profile menu"
               aria-expanded={isProfileDropdownOpen}
               className="relative"

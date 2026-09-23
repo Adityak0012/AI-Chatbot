@@ -11,8 +11,8 @@ from app.core.config import settings
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 
-MONTHLY_AMOUNT = 29900   # ₹299 in paise
-YEARLY_AMOUNT  = 297800  # ₹2978 in paise
+MONTHLY_AMOUNT = 29900   # ₹299 in Rupees
+YEARLY_AMOUNT  = 297800  # ₹2978 in Rupees
 
 
 class CreateOrderRequest(BaseModel):
