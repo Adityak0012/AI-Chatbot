@@ -65,17 +65,9 @@ class GroqProvider(BaseAIProvider):
                 })
 
         if images and len(images) > 0:
-            selected_model = "meta-llama/llama-4-scout-17b-16e-instruct"
-
-            content = [{"type": "text", "text": prompt}]
-            for img in images:
-                b64_url = self._get_image_base64_url(img)
-                if b64_url:
-                    content.append({
-                        "type": "image_url",
-                        "image_url": {"url": b64_url}
-                    })
-            messages.append({"role": "user", "content": content})
+            from app.services.providers.gemini_provider import GeminiProvider
+            gemini = GeminiProvider()
+            return gemini.generate_response(prompt, images=images, model="gemini-1.5-flash", history=history)
         else:
             messages.append({"role": "user", "content": prompt})
 
@@ -156,16 +148,10 @@ class GroqProvider(BaseAIProvider):
                 })
 
         if images and len(images) > 0:
-            selected_model = "meta-llama/llama-4-scout-17b-16e-instruct"
-            content = [{"type": "text", "text": prompt}]
-            for img in images:
-                b64_url = self._get_image_base64_url(img)
-                if b64_url:
-                    content.append({
-                        "type": "image_url",
-                        "image_url": {"url": b64_url}
-                    })
-            messages.append({"role": "user", "content": content})
+            from app.services.providers.gemini_provider import GeminiProvider
+            gemini = GeminiProvider()
+            yield from gemini.generate_stream(prompt, images=images, model="gemini-1.5-flash", history=history)
+            return
         else:
             messages.append({"role": "user", "content": prompt})
 
